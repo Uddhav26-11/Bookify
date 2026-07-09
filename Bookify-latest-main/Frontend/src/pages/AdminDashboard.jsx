@@ -108,10 +108,12 @@ export default function AdminDashboard() {
   const deletePickup = async (pickup) => {
     if (!confirm("Delete this pickup request and its books?")) return;
     try {
-      for (const book of pickup.books) {
-        await api.delete(`/admin/books/${book._id}`);
-      }
-      await api.patch(`/admin/pickups/${pickup._id}/status`, { status: "Rejected" });
+      // Deletes the PickupRequest itself (and any books still attached to
+      // it) in one call. Previously this loop only deleted the child books
+      // and set status to "Rejected", never removing the PickupRequest
+      // document — so an already-Rejected request with no books left
+      // looked "stuck" and never disappeared from the table.
+      await api.delete(`/admin/pickups/${pickup._id}`);
       fetchData();
     } catch (err) {
       alert("Failed to delete");

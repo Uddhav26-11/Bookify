@@ -10,6 +10,7 @@ const {
   updateBookPrice,
   sendCounterOffer,
   deleteBook,
+  deletePickupRequest,
   updateOrderStatus,
   getAllOrders,
 } = require("../controllers/adminController");
@@ -35,6 +36,7 @@ router.get("/users", protect, authorizeRoles("admin"), getAllUsers);
 router.patch("/books/:bookId/price",protect,authorizeRoles("admin"),updateBookPrice,);
 router.patch("/books/:bookId/counter-offer", protect, authorizeRoles("admin"), sendCounterOffer);
 router.delete("/books/:bookId", protect, authorizeRoles("admin"), deleteBook);
+router.delete("/pickups/:id", protect, authorizeRoles("admin"), deletePickupRequest);
 router.get("/orders", protect, authorizeRoles("admin"), getAllOrders);
 router.patch("/orders/:orderId/status",protect,authorizeRoles("admin"),updateOrderStatus,);
 

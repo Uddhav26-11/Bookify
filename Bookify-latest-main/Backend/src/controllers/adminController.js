@@ -468,3 +468,28 @@ exports.deleteBook = async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// Delete a pickup request entirely, along with any books still attached to
+// it. Previously there was no route that actually removed the
+// PickupRequest document itself — the frontend's "Delete" button could
+// only delete the attached books and flip status to "Rejected", so an
+// already-Rejected request with no books left (nothing to delete, already
+// the target status) would just sit there forever looking un-deletable.
+exports.deletePickupRequest = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const pickup = await PickupRequest.findById(id);
+    if (!pickup) {
+      return res.status(404).json({ success: false, message: "Pickup request not found" });
+    }
+
+    if (pickup.books?.length) {
+      await Book.deleteMany({ _id: { $in: pickup.books } });
+    }
+    await PickupRequest.findByIdAndDelete(id);
+
+    return res.status(200).json({ success: true, message: "Pickup request deleted" });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
