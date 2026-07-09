@@ -13,6 +13,7 @@ const {
   deletePickupRequest,
   updateOrderStatus,
   getAllOrders,
+  deleteOrder,
 } = require("../controllers/adminController");
 const { protect } = require("../middleware/authMiddleware");
 const { authorizeRoles } = require("../middleware/roleMiddleware");
@@ -39,5 +40,6 @@ router.delete("/books/:bookId", protect, authorizeRoles("admin"), deleteBook);
 router.delete("/pickups/:id", protect, authorizeRoles("admin"), deletePickupRequest);
 router.get("/orders", protect, authorizeRoles("admin"), getAllOrders);
 router.patch("/orders/:orderId/status",protect,authorizeRoles("admin"),updateOrderStatus,);
+router.delete("/orders/:orderId", protect, authorizeRoles("admin"), deleteOrder);
 
 module.exports = router;

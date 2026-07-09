@@ -54,6 +54,16 @@ export default function AdminDashboard() {
     }
   };
 
+  const deleteOrder = async (order) => {
+    if (!confirm("Delete this order permanently? This cannot be undone.")) return;
+    try {
+      await api.delete(`/admin/orders/${order._id}`);
+      fetchData();
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to delete order");
+    }
+  };
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -383,11 +393,12 @@ export default function AdminDashboard() {
                 <th className="px-4 py-3">Amount</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3">Update Delivery Status</th>
+                <th className="px-4 py-3"></th>
               </tr>
             </thead>
             <tbody>
               {orders.length === 0 ? (
-                <tr><td colSpan={6} className="px-4 py-6 text-center text-muted">No orders yet.</td></tr>
+                <tr><td colSpan={7} className="px-4 py-6 text-center text-muted">No orders yet.</td></tr>
               ) : orders.map((o) => (
                 <tr key={o._id} className="border-t border-mint-line align-middle">
                   <td className="px-4 py-3 font-mono text-xs text-forest font-semibold">{o.trackingId}</td>
@@ -406,6 +417,11 @@ export default function AdminDashboard() {
                     >
                       {ORDER_STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
                     </select>
+                  </td>
+                  <td className="px-4 py-3">
+                    <button onClick={() => deleteOrder(o)} className="text-rose hover:opacity-70" title="Delete">
+                      <Trash2 size={16} />
+                    </button>
                   </td>
                 </tr>
               ))}

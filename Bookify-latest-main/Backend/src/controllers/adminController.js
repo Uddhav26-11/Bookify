@@ -458,6 +458,22 @@ exports.getAllOrders = async (req, res) => {
   }
 };
 
+// Permanently remove an order (e.g. test/junk orders, or ones left behind
+// by an abandoned/duplicate Stripe checkout whose linked customer or books
+// no longer exist). Does not touch the linked books/customer themselves.
+exports.deleteOrder = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const order = await Order.findByIdAndDelete(orderId);
+    if (!order) {
+      return res.status(404).json({ success: false, message: "Order not found" });
+    }
+    return res.status(200).json({ success: true, message: "Order deleted" });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // Delete a book from inventory
 exports.deleteBook = async (req, res) => {
   try {
