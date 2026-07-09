@@ -30,7 +30,7 @@ app.use(cookieParser());
 
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://bookify-4.onrender.com",
+  "https://bookify-5.onrender.com/",
 ];
 
 app.use(
