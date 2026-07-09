@@ -10,7 +10,7 @@ const TOKEN_KEY = "bookify_token";
 let socket = null;
 
 // Opens (or reuses) the socket connection. The JWT is sent explicitly via
-// the handshake `auth` payload (read fresh from localStorage) since the
+// the handshake `auth` payload (read fresh from sessionStorage) since the
 // socket.io-client doesn't reliably forward the app's Authorization header,
 // and the httpOnly cookie is kept only as a fallback.
 export function connectSocket() {
@@ -18,7 +18,7 @@ export function connectSocket() {
 
   socket = io(SOCKET_URL, {
     withCredentials: true,
-    auth: { token: localStorage.getItem(TOKEN_KEY) },
+    auth: { token: sessionStorage.getItem(TOKEN_KEY) },
     reconnection: true,
     reconnectionAttempts: Infinity,
     reconnectionDelay: 1000,
