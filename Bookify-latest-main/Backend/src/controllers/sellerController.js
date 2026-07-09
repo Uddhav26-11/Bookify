@@ -65,67 +65,46 @@ exports.getMyPaymentHistory = async (req, res) => {
 };
 
 // GET /api/seller/dashboard — Completed Orders, Revenue, Books Sold, Pending
-// Orders for the logged-in seller, computed live from the Order collection
-// (never hardcoded, never cached client-side) so it's always correct and
-// never resets to 0 on refresh.
+// Orders for the logged-in seller, computed live (never hardcoded, never
+// cached client-side) so it's always correct and never resets to 0 on
+// refresh.
 //
-// Each customer Order can contain books from multiple sellers, so revenue
-// can't just be `order.totalAmount` — that's the WHOLE order's total, not
-// this seller's share. Instead we unwind `order.bill.items` (the per-book
-// price snapshot captured at checkout, in orderController/paymentController)
-// and only sum the line items whose book belongs to this seller.
+// IMPORTANT: this counts the seller's OWN sell-to-platform flow (the
+// pickup request -> admin approval -> payout flow on the Book model, whose
+// tracking you see under "Track Requests"/"Payment History"), NOT the
+// customer-Order resale flow. Those are two different transactions: a book
+// can be marked "Paid" here the moment the seller is paid for handing the
+// book over, long before (or even if never) a customer buys it off the
+// marketplace afterwards. Tying these stats to customer Orders meant a
+// seller who was already paid still saw ₹0 revenue until a stranger bought
+// the book — that was the bug.
 exports.getSellerDashboardStats = async (req, res) => {
   try {
     const sellerId = req.user.id;
-    const myBookIds = await Book.find({ seller: sellerId }).distinct("_id");
+    const books = await Book.find({ seller: sellerId, status: { $ne: "Rejected" } }).select(
+      "status finalPrice sellerProposedPrice aiEstimatedPrice"
+    );
 
-    if (myBookIds.length === 0) {
-      return res.status(200).json({
-        success: true,
-        stats: { completedOrders: 0, pendingOrders: 0, revenue: 0, booksSold: 0 },
-      });
+    const paidStatuses = ["Paid", "Completed"];
+    let completedOrders = 0;
+    let pendingOrders = 0;
+    let revenue = 0;
+    let booksSold = 0;
+
+    for (const book of books) {
+      if (paidStatuses.includes(book.status)) {
+        completedOrders += 1;
+        booksSold += 1;
+        revenue += book.finalPrice || book.sellerProposedPrice || book.aiEstimatedPrice || 0;
+      } else {
+        pendingOrders += 1;
+      }
     }
 
-    const [result] = await Order.aggregate([
-      // Only orders that include at least one of this seller's books.
-      { $match: { books: { $in: myBookIds }, orderStatus: { $ne: "Cancelled" } } },
-      { $unwind: "$bill.items" },
-      // Narrow down to just this seller's own line items within the order
-      // (an order may also contain other sellers' books).
-      { $match: { "bill.items.book": { $in: myBookIds } } },
-      {
-        $group: {
-          _id: null,
-          completedOrderIds: {
-            $addToSet: { $cond: [{ $eq: ["$paymentStatus", "Paid"] }, "$_id", "$$REMOVE"] },
-          },
-          pendingOrderIds: {
-            $addToSet: { $cond: [{ $ne: ["$paymentStatus", "Paid"] }, "$_id", "$$REMOVE"] },
-          },
-          revenue: {
-            $sum: {
-              $cond: [
-                { $eq: ["$paymentStatus", "Paid"] },
-                { $multiply: ["$bill.items.price", "$bill.items.qty"] },
-                0,
-              ],
-            },
-          },
-          booksSold: {
-            $sum: { $cond: [{ $eq: ["$paymentStatus", "Paid"] }, "$bill.items.qty", 0] },
-          },
-        },
-      },
-    ]);
-
-    const stats = {
-      completedOrders: result?.completedOrderIds?.length || 0,
-      pendingOrders: result?.pendingOrderIds?.length || 0,
-      revenue: result?.revenue || 0,
-      booksSold: result?.booksSold || 0,
-    };
-
-    return res.status(200).json({ success: true, stats });
+    return res.status(200).json({
+      success: true,
+      stats: { completedOrders, pendingOrders, revenue, booksSold },
+    });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
