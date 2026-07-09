@@ -3,7 +3,7 @@ import axios from "axios";
 const TOKEN_KEY = "bookify_token";
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
+  baseURL: import.meta.env.VITE_API_URL || "https://bookify-2-w1kb.onrender.com/api",
   // Keep sending the httpOnly cookie too (backwards compatible), but the
   // Authorization header below is what actually keeps the session alive
   // across refreshes, since it's read fresh from localStorage on every
