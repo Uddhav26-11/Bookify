@@ -5,7 +5,6 @@ import { Eye, EyeOff, BookOpen } from "lucide-react";
 import { login } from "../store/authSlice";
 import api from "../api/axios";
 import { setToken } from "../api/auth";
-import Logo from "../components/Logo";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -25,8 +24,6 @@ export default function Login() {
       const res = await api.post("/auth/login", { email: email.trim(), password });
       const { user, token } = res.data;
 
-      // Persist the JWT so a page refresh (or reopening the tab) restores
-      // the session instead of logging the user out.
       setToken(token);
       dispatch(login({ role: user.role, name: user.name, email: user.email, id: user.id }));
 
@@ -42,7 +39,6 @@ export default function Login() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] flex items-center justify-center px-4 py-12 overflow-hidden">
-      {/* Full-bleed background image */}
       <img
         src="https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=1600&q=75"
         alt="Shelves full of books in a library"
@@ -50,15 +46,17 @@ export default function Login() {
       />
       <div className="absolute inset-0 bg-gradient-to-b from-ink/85 via-forest-dark/75 to-ink/85" />
 
-      {/* Centered login card */}
       <div className="relative z-10 w-full max-w-sm">
-        <div className="flex flex-col items-center mb-8">
-          <Logo className="[&_span]:text-white" />
-          <div className="mt-6 w-11 h-11 rounded-xl bg-white/10 border border-white/15 backdrop-blur flex items-center justify-center text-lime">
+        <div className="flex flex-col items-center mb-7">
+          <div className="w-11 h-11 rounded-xl bg-white/10 border border-white/15 backdrop-blur flex items-center justify-center text-lime">
             <BookOpen size={20} />
           </div>
-          <h1 className="mt-4 text-3xl font-display font-semibold text-white text-center">Buy & sell old books, easily</h1>
-          <p className="text-white/70 text-center mt-1.5 text-sm max-w-xs">Log in to list your old books for sale or find second-hand books at a fair price.</p>
+          <h1 className="mt-4 text-2xl sm:text-3xl font-semibold text-white text-center leading-snug tracking-normal">
+            Buy &amp; sell old books, easily
+          </h1>
+          <p className="text-white/70 text-center mt-2 text-sm max-w-[280px] leading-relaxed">
+            Log in to list your old books for sale or find second-hand books at a fair price.
+          </p>
         </div>
 
         <form onSubmit={handleLogin} className="bg-white/95 backdrop-blur border border-white/40 rounded-2xl shadow-xl shadow-black/20 p-6 space-y-4">
