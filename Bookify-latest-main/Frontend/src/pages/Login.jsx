@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { Eye, EyeOff, BookOpen } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { login } from "../store/authSlice";
 import api from "../api/axios";
 import { setToken } from "../api/auth";
@@ -48,11 +48,7 @@ export default function Login() {
 
       <div className="relative z-10 w-full max-w-sm">
         <div className="flex flex-col items-center mb-6">
-          <div className="flex items-center gap-2">
-            <BookOpen size={20} className="text-lime" />
-            <span className="font-display text-xl font-semibold tracking-tight text-white">Bookify</span>
-          </div>
-          <h1 className="mt-5 text-2xl sm:text-3xl font-semibold text-white text-center leading-snug tracking-normal">
+          <h1 className="text-2xl sm:text-3xl font-semibold text-white text-center leading-snug tracking-normal">
             Buy &amp; sell old books, easily
           </h1>
         </div>
