@@ -44,7 +44,7 @@ export default function Login() {
         alt="Shelves full of books in a library"
         className="absolute inset-0 w-full h-full object-cover"
       />
-      {/* <div className="absolute inset-0 bg-gradient-to-b from-ink/85 via-forest-dark/75 to-ink/85" /> */}
+      <div className="absolute inset-0 bg-gradient-to-b from-ink/85 via-forest-dark/75 to-ink/85" />
 
       <div className="relative z-10 w-full max-w-sm">
         <div className="flex flex-col items-center mb-6">
