@@ -20,29 +20,22 @@ const featureChips = [
   { icon: Leaf, label: "Eco Friendly" },
 ];
 
-const stats = [
-  { value: "15K+", label: "Books Listed" },
-  { value: "8K+", label: "Happy Students" },
-  { value: "120+", label: "Cities" },
-  { value: "4.9★", label: "Average Rating" },
-];
-
 const floatingCards = [
-  { icon: BookOpen, label: "Stack of Books", tone: "bg-mint text-forest", pos: "top-0 left-4", tilt: "-4deg", delay: "0s" },
-  { icon: GraduationCap, label: "Student Reading", tone: "bg-forest text-white", pos: "top-6 right-0", tilt: "3deg", delay: "0.4s" },
-  { icon: Repeat, label: "Book Exchange", tone: "bg-white text-forest", pos: "top-40 left-0", tilt: "2deg", delay: "0.8s" },
-  { icon: Package, label: "Delivery Box", tone: "bg-lime/60 text-forest-dark", pos: "top-48 right-8", tilt: "-3deg", delay: "1.2s" },
-  { icon: ShoppingBag, label: "Online Marketplace", tone: "bg-white text-forest", pos: "top-80 left-10", tilt: "4deg", delay: "0.6s" },
-  { icon: Truck, label: "Book Pickup", tone: "bg-forest-dark text-white", pos: "top-[21rem] right-2", tilt: "-2deg", delay: "1s" },
+  { icon: BookOpen, label: "Stack of Books", tone: "bg-mint text-forest", pos: "top-0 left-2 sm:left-4", tilt: "-4deg", delay: "0s" },
+  { icon: GraduationCap, label: "Student Reading", tone: "bg-forest text-white", pos: "top-4 right-0", tilt: "3deg", delay: "0.4s" },
+  { icon: Repeat, label: "Book Exchange", tone: "bg-white text-forest", pos: "top-32 sm:top-40 left-0", tilt: "2deg", delay: "0.8s", hideOnMobile: true },
+  { icon: Package, label: "Delivery Box", tone: "bg-lime/60 text-forest-dark", pos: "top-40 sm:top-48 right-2 sm:right-8", tilt: "-3deg", delay: "1.2s", hideOnMobile: true },
+  { icon: ShoppingBag, label: "Online Marketplace", tone: "bg-white text-forest", pos: "top-64 sm:top-80 left-2 sm:left-10", tilt: "4deg", delay: "0.6s", hideOnMobile: true },
+  { icon: Truck, label: "Book Pickup", tone: "bg-forest-dark text-white", pos: "top-72 sm:top-[21rem] right-0 sm:right-2", tilt: "-2deg", delay: "1s", hideOnMobile: true },
 ];
 
 export default function Landing() {
   return (
     <div>
       {/* Hero */}
-      <section className="relative overflow-hidden min-h-[85vh] md:min-h-[90vh] flex items-center bg-paper">
+      <section className="relative overflow-hidden min-h-fit py-14 lg:min-h-[85vh] xl:min-h-[90vh] lg:py-16 flex items-center bg-paper">
         {/* Background effects */}
-        <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-mint/60 via-paper to-paper" />
           <div className="absolute -top-24 -left-24 w-80 h-80 rounded-full bg-mint blur-3xl opacity-70" />
           <div className="absolute top-1/3 -right-20 w-96 h-96 rounded-full bg-lime/30 blur-3xl opacity-60" />
@@ -53,12 +46,12 @@ export default function Landing() {
               backgroundSize: "42px 42px",
             }}
           />
-          <BookOpen className="hidden md:block absolute top-16 left-1/2 text-forest/20 animate-float-icon" size={30} />
-          <Sparkles className="hidden md:block absolute bottom-24 left-1/3 text-lime/60 animate-float-icon" size={22} style={{ animationDelay: "1.5s" }} />
-          <BookOpen className="hidden md:block absolute bottom-12 right-1/4 text-forest/15 animate-float-icon" size={26} style={{ animationDelay: "2.2s" }} />
+          <BookOpen className="hidden lg:block absolute top-16 left-1/2 text-forest/20 animate-float-icon" size={30} />
+          <Sparkles className="hidden lg:block absolute bottom-24 left-1/3 text-lime/60 animate-float-icon" size={22} style={{ animationDelay: "1.5s" }} />
+          <BookOpen className="hidden lg:block absolute bottom-12 right-1/4 text-forest/15 animate-float-icon" size={26} style={{ animationDelay: "2.2s" }} />
         </div>
 
-        <div className="relative max-w-7xl mx-auto px-6 py-16 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+        <div className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
           {/* Left content */}
           <div className="animate-fade-up">
             <span className="inline-flex items-center gap-2 text-xs font-mono font-medium text-forest bg-mint px-3 py-1.5 rounded-full mb-6 border border-mint-line">
@@ -110,36 +103,21 @@ export default function Landing() {
           </div>
 
           {/* Right illustration */}
-          <div className="relative h-[420px] sm:h-[480px] lg:h-[520px] order-first lg:order-last animate-slide-left">
-            <div className="absolute inset-6 sm:inset-10 rounded-[2rem] bg-gradient-to-br from-mint via-white to-lime/20 border border-mint-line" />
-            {floatingCards.map((c, i) => (
+          <div className="relative h-[260px] sm:h-[420px] lg:h-[520px] overflow-hidden order-first lg:order-last animate-slide-left">
+            <div className="absolute inset-3 sm:inset-8 lg:inset-10 rounded-[2rem] bg-gradient-to-br from-mint via-white to-lime/20 border border-mint-line" />
+            {floatingCards.map((c) => (
               <div
                 key={c.label}
-                className={`absolute ${c.pos} w-36 sm:w-40 rounded-2xl border border-white/60 shadow-xl backdrop-blur bg-white/80 p-4 animate-float-card`}
+                className={`absolute ${c.pos} ${c.hideOnMobile ? "hidden sm:block" : ""} w-28 sm:w-36 lg:w-40 rounded-2xl border border-white/60 shadow-xl backdrop-blur bg-white/80 p-3 sm:p-4 animate-float-card`}
                 style={{ "--tilt": c.tilt, animationDelay: c.delay }}
               >
-                <div className={`w-9 h-9 rounded-xl flex items-center justify-center mb-2 ${c.tone}`}>
-                  <c.icon size={18} />
+                <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center mb-2 ${c.tone}`}>
+                  <c.icon size={16} />
                 </div>
-                <p className="text-xs font-semibold text-ink leading-snug">{c.label}</p>
+                <p className="text-[11px] sm:text-xs font-semibold text-ink leading-snug">{c.label}</p>
               </div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* Stats */}
-      <section className="max-w-7xl mx-auto px-6 -mt-10 sm:-mt-16 relative z-10">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {stats.map((s) => (
-            <div
-              key={s.label}
-              className="rounded-xl bg-white/70 backdrop-blur border border-mint-line shadow-md p-5 text-center hover:-translate-y-1 hover:shadow-lg transition-all duration-300"
-            >
-              <p className="font-display text-2xl sm:text-3xl font-bold text-forest">{s.value}</p>
-              <p className="text-xs sm:text-sm text-muted mt-1">{s.label}</p>
-            </div>
-          ))}
         </div>
       </section>
 
