@@ -33,16 +33,9 @@ export default function Navbar() {
 
         {role !== "admin" && (
           <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-ink/80">
-            {role !== "seller" && (
-              <Link to="/marketplace" className="hover:text-forest transition">Buy Books</Link>
-            )}
-            {role !== "customer" && (
-              <Link to="/sell" className="hover:text-forest transition">Sell Books</Link>
-            )}
             {role === "customer" && (
               <Link to="/orders" className="hover:text-forest transition">My Orders</Link>
             )}
-            <a href="#how-it-works" onClick={handleHowItWorks} className="hover:text-forest transition">How it works</a>
           </nav>
         )}
 

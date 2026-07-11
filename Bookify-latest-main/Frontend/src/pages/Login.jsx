@@ -38,7 +38,7 @@ export default function Login() {
   };
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] flex items-center justify-center px-4 py-8 pb-20 overflow-hidden">
+    <div className="relative flex items-center justify-center px-4 py-10 overflow-hidden">
       {/* Full-bleed background image */}
       <img
         src="https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=1600&q=75"
