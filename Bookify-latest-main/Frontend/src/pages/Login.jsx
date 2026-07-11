@@ -1,30 +1,12 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import {
-  Eye, EyeOff, Sparkles, BookOpen, GraduationCap, Repeat, Package,
-  ShoppingBag, Truck, CheckCircle2, CreditCard, Leaf,
-} from "lucide-react";
+import { Eye, EyeOff, BookOpen, CheckCircle2 } from "lucide-react";
 import { login } from "../store/authSlice";
 import api from "../api/axios";
 import { setToken } from "../api/auth";
 
-const trustIndicators = ["Verified Sellers", "Secure Payments", "Fast Pickup", "Affordable Prices"];
-
-const featureChips = [
-  { icon: Package, label: "Free Pickup" },
-  { icon: CreditCard, label: "Secure Payment" },
-  { icon: Leaf, label: "Eco Friendly" },
-];
-
-const floatingCards = [
-  { icon: BookOpen, label: "Stack of Books", tone: "bg-mint text-forest", pos: "top-0 left-4", tilt: "-4deg", delay: "0s" },
-  { icon: GraduationCap, label: "Student Reading", tone: "bg-forest text-white", pos: "top-6 right-0", tilt: "3deg", delay: "0.4s" },
-  { icon: Repeat, label: "Book Exchange", tone: "bg-white text-forest", pos: "top-40 left-0", tilt: "2deg", delay: "0.8s" },
-  { icon: Package, label: "Delivery Box", tone: "bg-lime/60 text-forest-dark", pos: "top-48 right-8", tilt: "-3deg", delay: "1.2s" },
-  { icon: ShoppingBag, label: "Online Marketplace", tone: "bg-white text-forest", pos: "top-80 left-10", tilt: "4deg", delay: "0.6s" },
-  { icon: Truck, label: "Book Pickup", tone: "bg-forest-dark text-white", pos: "top-[21rem] right-2", tilt: "-2deg", delay: "1s" },
-];
+const features = ["Verified Users", "Secure Platform", "Affordable Books", "Easy Book Selling"];
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -58,79 +40,81 @@ export default function Login() {
   };
 
   return (
-    <div className="relative overflow-hidden min-h-fit py-14 lg:min-h-[85vh] xl:min-h-[90vh] lg:py-16 flex items-center bg-paper">
-      {/* Background effects */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-mint/60 via-paper to-paper" />
-        <div className="absolute -top-24 -left-24 w-80 h-80 rounded-full bg-mint blur-3xl opacity-70" />
-        <div className="absolute top-1/3 -right-20 w-96 h-96 rounded-full bg-lime/30 blur-3xl opacity-60" />
-        <div
-          className="absolute inset-0 opacity-[0.05]"
-          style={{
-            backgroundImage: "linear-gradient(var(--color-forest) 1px, transparent 1px), linear-gradient(90deg, var(--color-forest) 1px, transparent 1px)",
-            backgroundSize: "42px 42px",
-          }}
-        />
-        <BookOpen className="hidden lg:block absolute top-16 left-1/2 text-forest/20 animate-float-icon" size={30} />
-        <Sparkles className="hidden lg:block absolute bottom-24 left-1/3 text-lime/60 animate-float-icon" size={22} style={{ animationDelay: "1.5s" }} />
-        <BookOpen className="hidden lg:block absolute bottom-12 right-1/4 text-forest/15 animate-float-icon" size={26} style={{ animationDelay: "2.2s" }} />
-      </div>
+    <div className="min-h-[calc(100vh-64px)] grid grid-cols-1 lg:grid-cols-2 bg-paper">
+      {/* Left: illustration + brand content (hidden on mobile) */}
+      <div className="hidden md:flex relative overflow-hidden flex-col justify-center px-10 lg:px-14 py-14 bg-gradient-to-br from-mint via-paper to-lime/20 border-b lg:border-b-0 lg:border-r border-mint-line">
+        {/* Background decor */}
+        <div className="absolute -top-16 -left-16 w-64 h-64 rounded-full bg-mint blur-3xl opacity-70 pointer-events-none" />
+        <div className="absolute bottom-0 right-0 w-72 h-72 rounded-full bg-lime/30 blur-3xl opacity-60 pointer-events-none" />
 
-      <div className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
-        {/* Left: branding content */}
-        <div className="animate-fade-up text-center lg:text-left">
-          <span className="inline-flex items-center gap-2 text-xs font-mono font-medium text-forest bg-mint px-3 py-1.5 rounded-full mb-6 border border-mint-line">
-            📚 India's Smart Used Book Marketplace
+        <div className="relative animate-fade-up max-w-md mx-auto lg:mx-0">
+          <span className="inline-flex items-center gap-2 text-xs font-mono font-medium text-forest bg-white px-3 py-1.5 rounded-full mb-6 border border-mint-line shadow-sm">
+            📚 Welcome to Bookify
           </span>
 
-          <h1 className="font-display text-3xl sm:text-4xl lg:text-6xl font-bold tracking-tight leading-tight text-ink">
-            Buy &amp; Sell <span className="text-forest">Used Books</span><br />
-            Save Money. <span className="text-forest">Save Trees.</span>
+          <h1 className="font-display text-3xl lg:text-4xl font-bold tracking-tight leading-tight text-ink">
+            Buy, Sell &amp; Exchange<br />
+            <span className="text-forest">Used Books</span> Easily
           </h1>
 
-          <p className="mt-5 text-base sm:text-lg text-gray-600 max-w-md leading-relaxed mx-auto lg:mx-0">
-            Bookify helps students buy affordable second-hand books and sell old books in just a few clicks. Every book finds a new reader instead of collecting dust.
+          <p className="mt-4 text-gray-600 leading-relaxed">
+            Find affordable second-hand books or sell the books you no longer need. Bookify connects students with students, making education more affordable and sustainable.
           </p>
 
-          <div className="mt-6 flex flex-wrap justify-center lg:justify-start gap-x-5 gap-y-2">
-            {trustIndicators.map((t) => (
-              <span key={t} className="inline-flex items-center gap-1.5 text-sm text-muted font-medium">
-                <CheckCircle2 size={15} className="text-forest" /> {t}
-              </span>
+          <ul className="mt-6 space-y-2.5">
+            {features.map((f) => (
+              <li key={f} className="flex items-center gap-2 text-sm font-medium text-ink">
+                <CheckCircle2 size={16} className="text-forest shrink-0" /> {f}
+              </li>
             ))}
-          </div>
+          </ul>
 
-          <div className="mt-6 flex flex-wrap justify-center lg:justify-start gap-3">
-            {featureChips.map((f) => (
-              <span
-                key={f.label}
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-forest bg-white border border-mint-line px-3 py-1.5 rounded-xl shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300"
-              >
-                <f.icon size={14} /> {f.label}
-              </span>
-            ))}
-          </div>
+          {/* Illustration: girl with a stack of books, floating book accents */}
+          <div className="relative mt-10 h-64 lg:h-72 hidden lg:block">
+            <svg viewBox="0 0 360 260" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+              <ellipse cx="180" cy="235" rx="130" ry="14" fill="var(--color-mint-line)" />
 
-          {/* Floating illustration cards (desktop only) */}
-          <div className="relative hidden lg:block h-64 mt-10">
-            {floatingCards.slice(0, 3).map((c) => (
-              <div
-                key={c.label}
-                className={`absolute ${c.pos} w-36 rounded-2xl border border-white/60 shadow-xl backdrop-blur bg-white/80 p-4 animate-float-card`}
-                style={{ "--tilt": c.tilt, animationDelay: c.delay }}
-              >
-                <div className={`w-9 h-9 rounded-xl flex items-center justify-center mb-2 ${c.tone}`}>
-                  <c.icon size={18} />
-                </div>
-                <p className="text-xs font-semibold text-ink leading-snug">{c.label}</p>
-              </div>
-            ))}
+              {/* stack of books she stands beside */}
+              <g>
+                <rect x="230" y="178" width="86" height="16" rx="3" fill="var(--color-forest)" />
+                <rect x="236" y="160" width="74" height="16" rx="3" fill="var(--color-lime)" />
+                <rect x="228" y="142" width="82" height="16" rx="3" fill="var(--color-forest-dark)" />
+                <rect x="238" y="124" width="66" height="16" rx="3" fill="var(--color-mint-line)" stroke="var(--color-forest)" strokeWidth="1.5" />
+              </g>
+
+              {/* girl silhouette */}
+              <g>
+                <circle cx="140" cy="88" r="26" fill="#2A3B33" />
+                <path d="M100 220c2-38 12-64 40-70 28 6 38 32 40 70z" fill="var(--color-forest)" />
+                <path d="M108 150c10 8 22 12 32 12s22-4 32-12l6 18c-12 10-26 16-38 16s-26-6-38-16z" fill="var(--color-forest-dark)" />
+                {/* held book */}
+                <rect x="118" y="150" width="46" height="34" rx="3" fill="var(--color-lime)" transform="rotate(-6 118 150)" />
+                <rect x="120" y="150" width="42" height="4" rx="1" fill="var(--color-forest)" transform="rotate(-6 120 150)" />
+              </g>
+            </svg>
+
+            {/* floating accents */}
+            <div className="absolute top-2 left-2 w-11 h-11 rounded-xl bg-white border border-mint-line shadow-lg flex items-center justify-center text-forest animate-float-card" style={{ "--tilt": "-6deg" }}>
+              <BookOpen size={20} />
+            </div>
+            <div className="absolute top-10 right-4 w-11 h-11 rounded-xl bg-forest shadow-lg flex items-center justify-center text-white animate-float-card" style={{ "--tilt": "5deg", animationDelay: "0.6s" }}>
+              <BookOpen size={20} />
+            </div>
+            <div className="absolute bottom-4 right-16 w-9 h-9 rounded-lg bg-lime/70 shadow-md flex items-center justify-center text-forest-dark animate-float-card" style={{ "--tilt": "-4deg", animationDelay: "1.1s" }}>
+              <BookOpen size={16} />
+            </div>
           </div>
         </div>
+      </div>
 
-        {/* Right: login form */}
-        <div className="relative animate-slide-left w-full max-w-sm mx-auto lg:mx-0 lg:ml-auto">
-          <form onSubmit={handleLogin} className="bg-white/95 backdrop-blur border border-mint-line rounded-2xl shadow-xl shadow-forest/10 p-6 space-y-4">
+      {/* Right: login form (unchanged fields / logic, refreshed card styling) */}
+      <div className="relative flex items-center justify-center px-4 py-12 overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute inset-0 bg-gradient-to-b from-mint/30 via-paper to-paper" />
+        </div>
+
+        <div className="relative z-10 w-full max-w-sm animate-slide-left">
+          <form onSubmit={handleLogin} className="bg-white border border-mint-line rounded-2xl shadow-xl shadow-forest/10 p-7 sm:p-8 space-y-5">
             <p className="text-xs font-mono font-semibold text-muted uppercase tracking-wide">Login</p>
 
             <div>
@@ -168,7 +152,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-forest text-white font-semibold py-2.5 rounded-xl shadow-lg shadow-forest/20 hover:bg-forest-dark hover:-translate-y-0.5 hover:shadow-xl hover:shadow-forest/30 transition-all duration-300 disabled:opacity-50 disabled:hover:translate-y-0"
+              className="w-full bg-forest text-white font-semibold py-2.5 rounded-xl shadow-md shadow-forest/20 hover:bg-forest-dark hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:hover:translate-y-0"
             >
               {loading ? "Logging in..." : "Login"}
             </button>
