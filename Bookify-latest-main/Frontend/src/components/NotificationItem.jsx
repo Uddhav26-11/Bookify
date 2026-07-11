@@ -1,5 +1,5 @@
 import {
-  BookOpen, CheckCircle2, XCircle, Tag, Sparkles,
+  BookOpen, CheckCircle2, XCircle, Sparkles,
   PackageCheck, PackageX, Truck, UserPlus, AlertTriangle, Wallet, Bell, X,
 } from "lucide-react";
 import { timeAgo } from "../utils/timeAgo";
@@ -8,7 +8,6 @@ const ICONS = {
   BOOK_REQUEST: BookOpen,
   BOOK_APPROVED: CheckCircle2,
   BOOK_REJECTED: XCircle,
-  PRICE_UPDATED: Tag,
   NEW_BOOK: Sparkles,
   ORDER_ACCEPTED: PackageCheck,
   ORDER_CANCELLED: PackageX,
@@ -23,7 +22,6 @@ const ICON_COLORS = {
   BOOK_REQUEST: "text-forest bg-mint",
   BOOK_APPROVED: "text-forest bg-mint",
   BOOK_REJECTED: "text-rose bg-rose/10",
-  PRICE_UPDATED: "text-amber bg-amber/10",
   NEW_BOOK: "text-forest bg-lime/30",
   ORDER_ACCEPTED: "text-forest bg-mint",
   ORDER_CANCELLED: "text-rose bg-rose/10",

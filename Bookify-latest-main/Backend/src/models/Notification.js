@@ -39,8 +39,8 @@ const notificationSchema = new mongoose.Schema(
 
     // Not a hard enum on purpose — keeps the notification system easy to
     // extend with new event types without a migration. Common values:
-    // BOOK_REQUEST, BOOK_APPROVED, BOOK_REJECTED, PRICE_UPDATED, NEW_BOOK,
-    // ORDER_PLACED, ORDER_ACCEPTED, ORDER_CANCELLED, ORDER_UPDATE,
+    // BOOK_REQUEST, BOOK_APPROVED, BOOK_REJECTED, NEW_BOOK,
+    // ORDER_ACCEPTED, ORDER_CANCELLED, ORDER_UPDATE,
     // NEW_SELLER, NEW_CUSTOMER, PAYMENT_ISSUE, PAYMENT_DONE
     type: {
       type: String,

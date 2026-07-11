@@ -152,21 +152,6 @@ exports.updatePickupStatus = async (req, res) => {
           finalPrice: price,
           $push: { priceHistory: { price, changedBy: "admin" } },
         });
-
-        notifySafely(async () => {
-          const book = booksBefore.find((b) => String(b._id) === String(bookId));
-          if (!book) return;
-          await sendNotification({
-            receiver: pickup.seller,
-            receiverRole: "seller",
-            sender: "admin",
-            senderName: "Admin",
-            title: "Price Updated",
-            message: `Admin updated price for "${book.bookName}" from ₹${book.finalPrice || book.aiEstimatedPrice || 0} to ₹${price}.`,
-            type: "PRICE_UPDATED",
-            referenceId: bookId,
-          });
-        });
       }
     }
 
@@ -376,19 +361,6 @@ exports.sendCounterOffer = async (req, res) => {
 
     await PickupRequest.updateMany({ books: bookId }, { status: "UnderVerification" });
 
-    notifySafely(() =>
-      sendNotification({
-        receiver: book.seller,
-        receiverRole: "seller",
-        sender: "admin",
-        senderName: "Admin",
-        title: "Price Offer Sent",
-        message: `Admin sent a counter-offer of ₹${offeredPrice} for "${book.bookName}".${note ? ` Note: ${note}` : ""}`,
-        type: "PRICE_UPDATED",
-        referenceId: book._id,
-      })
-    );
-
     return res.status(200).json({ success: true, message: "Counter-offer sent to seller", book });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
@@ -414,25 +386,11 @@ exports.updateBookPrice = async (req, res) => {
     if (!existing) {
       return res.status(404).json({ success: false, message: "Book not found" });
     }
-    const oldPrice = existing.finalPrice || existing.aiEstimatedPrice || 0;
 
     const book = await Book.findByIdAndUpdate(
       bookId,
       { finalPrice: price, $push: { priceHistory: { price, changedBy: "admin" } } },
       { new: true }
-    );
-
-    notifySafely(() =>
-      sendNotification({
-        receiver: book.seller,
-        receiverRole: "seller",
-        sender: "admin",
-        senderName: "Admin",
-        title: "Price Updated",
-        message: `Admin updated price for "${book.bookName}" from ₹${oldPrice} to ₹${price}.`,
-        type: "PRICE_UPDATED",
-        referenceId: book._id,
-      })
     );
 
     return res.status(200).json({ success: true, book });
