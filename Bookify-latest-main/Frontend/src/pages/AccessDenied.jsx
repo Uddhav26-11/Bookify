@@ -21,7 +21,7 @@ export default function AccessDenied() {
       </p>
       <Link
         to={homePath}
-        className="inline-block mt-6 px-5 py-2.5 rounded-full bg-forest text-white text-sm font-semibold hover:bg-forest-dark transition"
+        className="inline-block mt-6 px-5 py-2.5 rounded-full btn-brand text-white text-sm font-semibold transition"
       >
         Back to my Dashboard
       </Link>

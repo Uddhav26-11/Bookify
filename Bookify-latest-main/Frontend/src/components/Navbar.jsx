@@ -56,7 +56,7 @@ export default function Navbar() {
             <Link to="/cart" className="relative">
               <ShoppingCart size={20} className="text-ink" />
               {cartCount > 0 && (
-                <span className="absolute -top-2 -right-2 bg-forest text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">{cartCount}</span>
+                <span className="absolute -top-2 -right-2 btn-brand text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">{cartCount}</span>
               )}
             </Link>
           )}
@@ -83,7 +83,7 @@ export default function Navbar() {
               </button>
             </div>
           ) : (
-            <Link to="/login" className="px-4 py-2 rounded-full bg-forest text-white text-sm font-semibold hover:bg-forest-dark transition">
+            <Link to="/login" className="px-4 py-2 rounded-full btn-brand text-white text-sm font-semibold transition">
               Login
             </Link>
           )}

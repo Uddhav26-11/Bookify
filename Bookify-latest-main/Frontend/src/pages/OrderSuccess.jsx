@@ -74,7 +74,7 @@ export default function OrderSuccess() {
           <div className="flex gap-3 mt-6">
             <button
               onClick={() => navigate("/orders")}
-              className="flex-1 bg-forest text-white font-semibold py-3 rounded-full hover:bg-forest-dark transition flex items-center justify-center gap-2"
+              className="flex-1 btn-brand text-white font-semibold py-3 rounded-full transition flex items-center justify-center gap-2"
             >
               <Package size={18} /> View My Orders
             </button>
@@ -90,7 +90,7 @@ export default function OrderSuccess() {
           </p>
           <Link
             to="/orders"
-            className="inline-block mt-6 bg-forest text-white font-semibold py-3 px-6 rounded-full hover:bg-forest-dark transition"
+            className="inline-block mt-6 btn-brand text-white font-semibold py-3 px-6 rounded-full transition"
           >
             Go to My Orders
           </Link>

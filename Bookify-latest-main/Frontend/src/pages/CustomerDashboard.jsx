@@ -56,7 +56,7 @@ export default function CustomerDashboard() {
       <div className="grid sm:grid-cols-3 gap-4 mt-10">
         <Link
           to="/marketplace"
-          className="bg-forest text-white font-semibold rounded-2xl p-6 hover:bg-forest-dark transition flex items-center justify-between"
+          className="btn-brand text-white font-semibold rounded-2xl p-6 transition flex items-center justify-between"
         >
           Browse Books <ShoppingBag size={20} />
         </Link>

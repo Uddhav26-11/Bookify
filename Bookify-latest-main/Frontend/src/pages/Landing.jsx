@@ -26,7 +26,7 @@ export default function Landing() {
               Upload photos, get AI price estimates and earn money — then buy your next set for less than half the MRP.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link to="/sell" className="px-6 py-3 rounded-full bg-forest text-white font-semibold hover:bg-forest-dark transition flex items-center gap-2">
+              <Link to="/sell" className="px-6 py-3 rounded-full btn-brand text-white font-semibold transition flex items-center gap-2">
                 Sell Books <ArrowRight size={16} />
               </Link>
               <Link to="/marketplace" className="px-6 py-3 rounded-full border border-mint-line text-ink font-semibold hover:bg-mint transition">
@@ -57,7 +57,7 @@ export default function Landing() {
         <h2 className="font-display text-2xl font-semibold text-ink mb-6">Browse categories</h2>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           {categories.map((c) => (
-            <Link key={c} to="/marketplace" className="rounded-2xl bg-mint border border-mint-line p-5 text-center font-medium text-ink hover:bg-forest hover:text-white transition">
+            <Link key={c} to="/marketplace" className="rounded-2xl bg-mint border border-mint-line p-5 text-center font-medium text-ink hover:text-white hover:shadow-lg hover:shadow-forest/20 hover:[background:var(--brand-gradient)] hover:border-transparent transition-all duration-300">
               {c}
             </Link>
           ))}

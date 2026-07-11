@@ -18,13 +18,13 @@ function TrackingTimeline({ orderStatus, statusHistory = [] }) {
             {i > 0 && (
               <div
                 className={`absolute top-2.5 right-1/2 h-0.5 w-full -z-10 ${
-                  done ? "bg-forest" : "bg-mint-line"
+                  done ? "bg-brand-gradient" : "bg-mint-line"
                 }`}
               />
             )}
             <div
               className={`w-5 h-5 rounded-full border-2 ${
-                done ? "bg-forest border-forest" : "bg-white border-mint-line"
+                done ? "bg-brand-gradient border-transparent" : "bg-white border-mint-line"
               }`}
             />
             <p className={`text-[11px] mt-2 font-medium ${done ? "text-forest" : "text-muted"}`}>{step}</p>
@@ -43,7 +43,7 @@ function TrackingTimeline({ orderStatus, statusHistory = [] }) {
 function OrderCard({ order }) {
   const [expanded, setExpanded] = useState(false);
   const paymentBadge =
-    order.paymentStatus === "Paid" ? "bg-forest text-white" : "bg-amber/15 text-amber";
+    order.paymentStatus === "Paid" ? "btn-brand text-white" : "bg-amber/15 text-amber";
 
   return (
     <div className="bg-white border border-mint-line rounded-2xl p-6">
@@ -168,7 +168,7 @@ export default function MyOrders() {
             className="w-full border border-mint-line rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-forest"
           />
         </div>
-        <button type="submit" className="bg-forest text-white font-semibold px-5 py-2.5 rounded-lg hover:bg-forest-dark transition flex items-center gap-2">
+        <button type="submit" className="btn-brand text-white font-semibold px-5 py-2.5 rounded-lg transition flex items-center gap-2">
           <Search size={16} /> Track
         </button>
       </form>

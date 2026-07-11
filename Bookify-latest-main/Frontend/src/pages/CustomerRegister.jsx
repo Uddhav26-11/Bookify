@@ -67,7 +67,7 @@ export default function CustomerRegister() {
         <button
           type="submit"
           disabled={loading}
-          className="sm:col-span-2 bg-forest text-white font-semibold py-2.5 rounded-lg hover:bg-forest-dark transition mt-2 disabled:opacity-50"
+          className="sm:col-span-2 btn-brand text-white font-semibold py-2.5 rounded-lg transition mt-2 disabled:opacity-50"
         >
           {loading ? "Creating account..." : "Submit"}
         </button>

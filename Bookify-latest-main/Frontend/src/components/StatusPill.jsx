@@ -5,7 +5,7 @@ const STYLES = {
   "Under Verification": "bg-amber/15 text-amber",
   Approved: "bg-forest/10 text-forest",
   Collected: "bg-forest/10 text-forest",
-  Paid: "bg-forest text-white",
+  Paid: "btn-brand text-white",
   Completed: "bg-ink text-white",
 };
 

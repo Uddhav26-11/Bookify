@@ -93,7 +93,7 @@ export default function BookDetails() {
           <Link
             to="/cart"
             onClick={() => dispatch(addToCart(book))}
-            className="flex-1 bg-forest text-white font-semibold py-3 rounded-full text-center hover:bg-forest-dark transition"
+            className="flex-1 btn-brand text-white font-semibold py-3 rounded-full text-center transition"
           >
             Buy Now
           </Link>

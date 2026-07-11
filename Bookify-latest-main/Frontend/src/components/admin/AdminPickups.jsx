@@ -156,7 +156,7 @@ export default function AdminPickups({ pickups, onUpdateStatus, onPay, onCounter
                                   <button
                                     onClick={() => sendCounterOffer(b._id)}
                                     disabled={offerSaving}
-                                    className="flex-1 bg-forest text-white font-semibold rounded px-2 py-1 disabled:opacity-50"
+                                    className="flex-1 btn-brand text-white font-semibold rounded px-2 py-1 disabled:opacity-50"
                                   >
                                     {offerSaving ? "Sending..." : "Send to Seller"}
                                   </button>
@@ -211,7 +211,7 @@ export default function AdminPickups({ pickups, onUpdateStatus, onPay, onCounter
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => onUpdateStatus(p._id, "Approved")}
-                            className="flex items-center gap-1 text-xs font-semibold bg-forest text-white px-2.5 py-1.5 rounded-lg hover:bg-forest-dark transition"
+                            className="flex items-center gap-1 text-xs font-semibold btn-brand text-white px-2.5 py-1.5 rounded-lg transition"
                           >
                             <Check size={14} /> Approve
                           </button>
@@ -247,7 +247,7 @@ export default function AdminPickups({ pickups, onUpdateStatus, onPay, onCounter
                     ) : ["Approved", "Collected"].includes(p.status) ? (
                       <button
                         onClick={() => setPayModal(p)}
-                        className="flex items-center gap-1 text-xs font-semibold bg-forest text-white px-2.5 py-1.5 rounded-lg hover:bg-forest-dark transition"
+                        className="flex items-center gap-1 text-xs font-semibold btn-brand text-white px-2.5 py-1.5 rounded-lg transition"
                       >
                         <Banknote size={14} /> Pay Seller
                       </button>
@@ -337,7 +337,7 @@ function PayModal({ pickup, onClose, onPay }) {
           <button
             onClick={() => setMode("Offline")}
             className={`flex-1 px-2 py-2 rounded-lg text-xs font-semibold border transition ${
-              mode === "Offline" ? "bg-forest text-white border-forest" : "border-mint-line text-ink"
+              mode === "Offline" ? "btn-brand text-white border-transparent" : "border-mint-line text-ink"
             }`}
           >
             Cash (COD)
@@ -345,7 +345,7 @@ function PayModal({ pickup, onClose, onPay }) {
           <button
             onClick={() => setMode("Online")}
             className={`flex-1 px-2 py-2 rounded-lg text-xs font-semibold border transition ${
-              mode === "Online" ? "bg-forest text-white border-forest" : "border-mint-line text-ink"
+              mode === "Online" ? "btn-brand text-white border-transparent" : "border-mint-line text-ink"
             }`}
           >
             Online (UPI/Bank)
@@ -353,7 +353,7 @@ function PayModal({ pickup, onClose, onPay }) {
           <button
             onClick={() => setMode("Stripe")}
             className={`flex-1 px-2 py-2 rounded-lg text-xs font-semibold border transition flex items-center justify-center gap-1 ${
-              mode === "Stripe" ? "bg-forest text-white border-forest" : "border-mint-line text-ink"
+              mode === "Stripe" ? "btn-brand text-white border-transparent" : "border-mint-line text-ink"
             }`}
           >
             <CreditCard size={13} /> Pay via Stripe
@@ -408,7 +408,7 @@ function PayModal({ pickup, onClose, onPay }) {
         <button
           onClick={submit}
           disabled={saving}
-          className="w-full mt-5 bg-forest text-white font-semibold py-2.5 rounded-lg hover:bg-forest-dark transition disabled:opacity-50"
+          className="w-full mt-5 btn-brand text-white font-semibold py-2.5 rounded-lg transition disabled:opacity-50"
         >
           {saving ? "Saving..." : `Confirm ${mode === "Online" ? "Online" : mode === "Stripe" ? "Stripe" : "Cash"} Payment`}
         </button>

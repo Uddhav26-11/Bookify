@@ -18,6 +18,36 @@
   --color-rose: #D9614F;
 }
 
+/* ---------------------------------------------------------------------- */
+/* Bookify brand gradient — single source of truth, used project-wide     */
+/* #16A34A -> #22C55E -> #4ADE80 (darker #0E5730 blended in on large surfaces) */
+/* ---------------------------------------------------------------------- */
+:root {
+  --brand-gradient: linear-gradient(135deg, #16A34A 0%, #22C55E 55%, #4ADE80 100%);
+  --brand-gradient-deep: linear-gradient(135deg, #0E5730 0%, #16A34A 55%, #22C55E 100%);
+}
+
+/* Primary buttons / CTAs everywhere */
+.btn-brand {
+  background: var(--brand-gradient);
+  transition: filter 0.25s ease, transform 0.2s ease, box-shadow 0.25s ease;
+}
+.btn-brand:hover { filter: brightness(1.08); box-shadow: 0 10px 22px -8px rgba(22, 163, 74, 0.45); }
+.btn-brand:active { filter: brightness(0.96); transform: translateY(1px); }
+.btn-brand:disabled { filter: grayscale(0.15) brightness(0.95); box-shadow: none; }
+
+/* Small solid badges / chips / dots / logo squares */
+.bg-brand-gradient { background: var(--brand-gradient); }
+.bg-brand-gradient-deep { background: var(--brand-gradient-deep); }
+
+/* Gradient text, for headings/accents that want the brand treatment */
+.text-brand-gradient {
+  background: var(--brand-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
 html { scroll-behavior: smooth; }
 body { background: var(--color-paper); color: var(--color-ink); font-family: var(--font-body); }
 

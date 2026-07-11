@@ -95,7 +95,7 @@ export default function Cart() {
             <button
               onClick={handleCheckout}
               disabled={loading}
-              className="w-full bg-forest text-white font-semibold py-3 rounded-full mt-5 hover:bg-forest-dark transition disabled:opacity-50"
+              className="w-full btn-brand text-white font-semibold py-3 rounded-full mt-5 transition disabled:opacity-50"
             >
               {loading ? "Redirecting to payment..." : "Checkout"}
             </button>
