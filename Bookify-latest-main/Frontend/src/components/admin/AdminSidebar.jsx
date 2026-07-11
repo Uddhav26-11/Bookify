@@ -10,6 +10,7 @@ import {
   Settings,
   LogOut,
   X,
+  ShieldCheck,
 } from "lucide-react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
@@ -17,7 +18,6 @@ import { logout } from "../../store/authSlice";
 import { notificationsReset } from "../../store/notificationSlice";
 import { clearToken } from "../../api/auth";
 import api from "../../api/axios";
-import Logo from "../Logo";
 
 export const MENU = [
   { key: "overview", label: "Overview", icon: LayoutDashboard },
@@ -61,9 +61,24 @@ export default function AdminSidebar({ active, onSelect, mobileOpen, onCloseMobi
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="flex items-center justify-between px-5 h-16 border-b border-mint-line shrink-0">
-          <Logo />
-          <button className="lg:hidden text-muted hover:text-rose" onClick={onCloseMobile}>
+        <div className="relative flex items-center justify-between gap-3 px-5 h-16 shrink-0 overflow-hidden bg-gradient-to-r from-[#0E5730] via-[#16A34A] to-[#22C55E]">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-white/15 backdrop-blur-sm border border-white/20 flex items-center justify-center shrink-0">
+              <ShieldCheck size={18} className="text-white" strokeWidth={2.25} />
+            </div>
+            <div className="min-w-0 leading-tight">
+              <p className="font-display text-[15px] font-bold tracking-tight text-white truncate">
+                Bookify Admin
+              </p>
+              <p className="text-[10px] font-mono tracking-[0.18em] text-white/70 uppercase">
+                Control Panel
+              </p>
+            </div>
+          </div>
+          <button
+            className="lg:hidden text-white/80 hover:text-white shrink-0"
+            onClick={onCloseMobile}
+          >
             <X size={20} />
           </button>
         </div>
@@ -77,7 +92,7 @@ export default function AdminSidebar({ active, onSelect, mobileOpen, onCloseMobi
                 onClick={() => handleSelect(item.key)}
                 className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
                   isActive
-                    ? "bg-forest text-white shadow-sm"
+                    ? "bg-gradient-to-r from-[#16A34A] to-[#22C55E] text-white shadow-md shadow-[#16A34A]/25"
                     : "text-ink/70 hover:bg-mint hover:text-forest"
                 }`}
               >

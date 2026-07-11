@@ -7,23 +7,22 @@ import {
   CheckCircle,
   IndianRupee,
   Wallet,
-  ShoppingBag,
 } from "lucide-react";
 import {
   ResponsiveContainer,
-  LineChart,
-  Line,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
-  BarChart,
-  Bar,
 } from "recharts";
 import StatCard from "./StatCard";
 
-const CHART_GREEN = "#14713F";
-const CHART_GREEN_LIGHT = "#C9F26C";
+// Bookify premium gradient scale
+const GRAD_FROM = "#16A34A";
+const GRAD_MID = "#22C55E";
+const GRAD_TO = "#4ADE80";
 
 export default function AdminOverview({ stats, analytics, pickups, users = [], onNavigate }) {
   const totalSellers = stats.totalSellers || 0;
@@ -31,13 +30,11 @@ export default function AdminOverview({ stats, analytics, pickups, users = [], o
   const booksUploaded = stats.booksUploaded || 0;
   const pendingRequests = stats.pendingRequests || 0;
 
-  const sellerGrowth = groupByMonth(users.filter((u) => u.role === "seller").map((u) => u.createdAt));
-  const customerGrowth = groupByMonth(users.filter((u) => u.role === "customer").map((u) => u.createdAt));
-  const bookCategoryData = groupBy(
-    pickups.flatMap((p) => p.books || []),
-    (b) => b.subject || b.class || "Other"
-  );
-  const requestStatusData = groupBy(pickups, (p) => p.status);
+  // ---- Graph 1: Seller Book Listing Analytics (real data from pickups) ----
+  const sellerData = buildSellerListingData(pickups);
+
+  // ---- Graph 2: Books Sold Analytics (real data from completed orders) ----
+  const salesData = buildBooksSoldData(analytics);
 
   return (
     <div className="space-y-8">
@@ -56,132 +53,98 @@ export default function AdminOverview({ stats, analytics, pickups, users = [], o
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">
-        <div>
-          <h2 className="font-bold text-lg text-ink mb-3">Seller Growth</h2>
-          <div className="bg-white border border-mint-line rounded-2xl p-5 shadow-sm">
-            {sellerGrowth.length ? (
-              <ResponsiveContainer width="100%" height={240}>
-                <BarChart data={sellerGrowth}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#D3EEDC" />
-                  <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#667C72" }} />
-                  <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: "#667C72" }} />
-                  <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid #D3EEDC" }} />
-                  <Bar dataKey="value" name="New Sellers" fill={CHART_GREEN} radius={[6, 6, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <EmptyChart />
-            )}
-          </div>
-        </div>
-        <div>
-          <h2 className="font-bold text-lg text-ink mb-3">Customer Growth</h2>
-          <div className="bg-white border border-mint-line rounded-2xl p-5 shadow-sm">
-            {customerGrowth.length ? (
-              <ResponsiveContainer width="100%" height={240}>
-                <BarChart data={customerGrowth}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#D3EEDC" />
-                  <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#667C72" }} />
-                  <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: "#667C72" }} />
-                  <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid #D3EEDC" }} />
-                  <Bar dataKey="value" name="New Customers" fill="#0E5730" radius={[6, 6, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <EmptyChart />
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <h2 className="font-bold text-lg text-ink mb-3">📈 Book Sales Trend</h2>
-        <div className="bg-white border border-mint-line rounded-2xl p-5 shadow-sm">
-          {analytics?.salesTrend?.length ? (
+        <ChartCard title="Seller Book Listing Analytics" subtitle="Books listed per seller · real database data">
+          {sellerData.length ? (
             <ResponsiveContainer width="100%" height={280}>
-              <LineChart data={analytics.salesTrend}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#D3EEDC" />
-                <XAxis dataKey="month" tick={{ fontSize: 12, fill: "#667C72" }} />
-                <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: "#667C72" }} />
-                <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid #D3EEDC" }} />
-                <Line type="monotone" dataKey="booksSold" name="Books Sold" stroke={CHART_GREEN} strokeWidth={2.5} dot={{ r: 3 }} />
-              </LineChart>
-            </ResponsiveContainer>
-          ) : (
-            <EmptyChart />
-          )}
-        </div>
-      </div>
-
-      <div className="grid lg:grid-cols-2 gap-6">
-        <div>
-          <h2 className="font-bold text-lg text-ink mb-3">💰 Average Selling Price Trend</h2>
-          <div className="bg-white border border-mint-line rounded-2xl p-5 shadow-sm">
-            {analytics?.avgPriceTrend?.length ? (
-              <ResponsiveContainer width="100%" height={260}>
-                <LineChart data={analytics.avgPriceTrend}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#D3EEDC" />
-                  <XAxis dataKey="month" tick={{ fontSize: 12, fill: "#667C72" }} />
-                  <YAxis tick={{ fontSize: 12, fill: "#667C72" }} />
-                  <Tooltip formatter={(v) => `₹${v}`} contentStyle={{ borderRadius: 12, border: "1px solid #D3EEDC" }} />
-                  <Line type="monotone" dataKey="avgPrice" name="Avg Price (₹)" stroke="#0E5730" strokeWidth={2.5} dot={{ r: 3 }} />
-                </LineChart>
-              </ResponsiveContainer>
-            ) : (
-              <EmptyChart />
-            )}
-          </div>
-        </div>
-
-        <div>
-          <h2 className="font-bold text-lg text-ink mb-3">Pickup Request Status</h2>
-          <div className="bg-white border border-mint-line rounded-2xl p-5 shadow-sm">
-            {requestStatusData.length ? (
-              <ResponsiveContainer width="100%" height={260}>
-                <BarChart data={requestStatusData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#D3EEDC" />
-                  <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#667C72" }} interval={0} angle={-20} textAnchor="end" height={50} />
-                  <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: "#667C72" }} />
-                  <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid #D3EEDC" }} />
-                  <Bar dataKey="value" name="Requests" fill={CHART_GREEN} radius={[6, 6, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <EmptyChart />
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <h2 className="font-bold text-lg text-ink mb-3">Books Listed by Category</h2>
-        <div className="bg-white border border-mint-line rounded-2xl p-5 shadow-sm">
-          {bookCategoryData.length ? (
-            <ResponsiveContainer width="100%" height={260}>
-              <BarChart data={bookCategoryData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#D3EEDC" />
-                <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#667C72" }} interval={0} angle={-20} textAnchor="end" height={50} />
-                <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: "#667C72" }} />
-                <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid #D3EEDC" }} />
-                <Bar dataKey="value" name="Books" fill={CHART_GREEN_LIGHT} stroke={CHART_GREEN} radius={[6, 6, 0, 0]} />
+              <BarChart data={sellerData} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="sellerBarGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={GRAD_TO} />
+                    <stop offset="55%" stopColor={GRAD_MID} />
+                    <stop offset="100%" stopColor={GRAD_FROM} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#D3EEDC" vertical={false} />
+                <XAxis
+                  dataKey="name"
+                  tick={{ fontSize: 11, fill: "#667C72" }}
+                  interval={0}
+                  angle={sellerData.length > 5 ? -20 : 0}
+                  textAnchor={sellerData.length > 5 ? "end" : "middle"}
+                  height={sellerData.length > 5 ? 50 : 30}
+                  axisLine={{ stroke: "#D3EEDC" }}
+                  tickLine={false}
+                />
+                <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: "#667C72" }} axisLine={false} tickLine={false} />
+                <Tooltip content={<SellerTooltip />} cursor={{ fill: "rgba(34,197,94,0.08)" }} />
+                <Bar
+                  dataKey="booksListed"
+                  name="Books Listed"
+                  fill="url(#sellerBarGradient)"
+                  radius={[10, 10, 0, 0]}
+                  maxBarSize={56}
+                  animationDuration={900}
+                  animationEasing="ease-out"
+                />
               </BarChart>
             </ResponsiveContainer>
           ) : (
             <EmptyChart />
           )}
-        </div>
-      </div>
+        </ChartCard>
 
-      <div>
-        <h2 className="font-bold text-lg text-ink mb-3">Analytics Summary</h2>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <StatCard icon={BookOpen} label="Total Books Sold" value={analytics?.totalBooksSold} />
-          <StatCard icon={IndianRupee} label="Total Revenue" value={analytics?.totalRevenue} isCurrency />
-          <StatCard icon={Wallet} label="Average Selling Price" value={analytics?.avgSellingPrice} isCurrency />
-          <StatCard icon={ShoppingBag} label="Pending Pickup Requests" value={analytics?.pendingPickupRequests} />
-          <StatCard icon={UserCheck} label="Active Sellers" value={analytics?.activeSellers} />
-          <StatCard icon={Users} label="Active Customers" value={analytics?.activeCustomers} />
-        </div>
+        <ChartCard title="Books Sold Analytics" subtitle="Monthly trend · completed / paid orders only">
+          {salesData.length ? (
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={salesData} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="salesBarGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={GRAD_TO} />
+                    <stop offset="55%" stopColor={GRAD_MID} />
+                    <stop offset="100%" stopColor={GRAD_FROM} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#D3EEDC" vertical={false} />
+                <XAxis
+                  dataKey="month"
+                  tick={{ fontSize: 11, fill: "#667C72" }}
+                  axisLine={{ stroke: "#D3EEDC" }}
+                  tickLine={false}
+                />
+                <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: "#667C72" }} axisLine={false} tickLine={false} />
+                <Tooltip content={<SalesTooltip />} cursor={{ fill: "rgba(34,197,94,0.08)" }} />
+                <Bar
+                  dataKey="booksSold"
+                  name="Books Sold"
+                  fill="url(#salesBarGradient)"
+                  radius={[10, 10, 0, 0]}
+                  maxBarSize={56}
+                  animationDuration={900}
+                  animationEasing="ease-out"
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <EmptyChart />
+          )}
+        </ChartCard>
+      </div>
+    </div>
+  );
+}
+
+/* ---------------------------- UI subcomponents --------------------------- */
+
+function ChartCard({ title, subtitle, children }) {
+  return (
+    <div>
+      <div className="mb-3">
+        <h2 className="font-bold text-lg text-ink">{title}</h2>
+        {subtitle && <p className="text-xs text-muted font-mono mt-0.5">{subtitle}</p>}
+      </div>
+      <div className="group relative overflow-hidden bg-white/70 backdrop-blur-sm border border-mint-line rounded-2xl p-5 shadow-sm hover:shadow-lg hover:shadow-[#16A34A]/10 transition-all duration-300">
+        <div className="pointer-events-none absolute -right-10 -top-10 w-40 h-40 rounded-full bg-gradient-to-br from-[#4ADE80]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+        <div className="relative">{children}</div>
       </div>
     </div>
   );
@@ -195,21 +158,99 @@ function EmptyChart() {
   );
 }
 
-function groupBy(items, keyFn) {
-  const map = {};
-  for (const item of items) {
-    const key = keyFn(item) || "Other";
-    map[key] = (map[key] || 0) + 1;
-  }
-  return Object.entries(map).map(([name, value]) => ({ name, value }));
+function TooltipShell({ title, rows }) {
+  return (
+    <div className="rounded-xl border border-mint-line bg-white/95 backdrop-blur-md shadow-lg px-4 py-3 min-w-[190px]">
+      <p className="text-sm font-semibold text-ink mb-1.5">{title}</p>
+      <div className="space-y-1">
+        {rows.map((r) => (
+          <div key={r.label} className="flex items-center justify-between gap-4 text-xs">
+            <span className="text-muted font-mono">{r.label}</span>
+            <span className="font-semibold text-forest">{r.value}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
-function groupByMonth(dates) {
+function SellerTooltip({ active, payload }) {
+  if (!active || !payload?.length) return null;
+  const d = payload[0].payload;
+  return (
+    <TooltipShell
+      title={d.name}
+      rows={[
+        { label: "Total Books Listed", value: d.booksListed.toLocaleString("en-IN") },
+        { label: "Avg. Listed Price", value: `₹${d.avgPrice.toLocaleString("en-IN")}` },
+        { label: "Total Value", value: `₹${d.totalValue.toLocaleString("en-IN")}` },
+      ]}
+    />
+  );
+}
+
+function SalesTooltip({ active, payload }) {
+  if (!active || !payload?.length) return null;
+  const d = payload[0].payload;
+  return (
+    <TooltipShell
+      title={d.month}
+      rows={[
+        { label: "Total Books Sold", value: d.booksSold.toLocaleString("en-IN") },
+        { label: "Total Revenue", value: `₹${d.revenue.toLocaleString("en-IN")}` },
+        { label: "Avg. Selling Price", value: `₹${d.avgPrice.toLocaleString("en-IN")}` },
+      ]}
+    />
+  );
+}
+
+/* ------------------------------ data helpers ------------------------------ */
+
+// Groups every listed book (from real pickup requests) by seller and
+// computes total books listed, average listed price and total listed value.
+// Uses the same price fallback chain used elsewhere in the admin panel
+// (finalPrice -> aiEstimatedPrice), so figures stay consistent with the
+// Books/Sellers tables.
+function buildSellerListingData(pickups = []) {
   const map = {};
-  for (const d of dates) {
-    const date = new Date(d);
-    const key = date.toLocaleString("en-IN", { month: "short", year: "numeric" });
-    map[key] = (map[key] || 0) + 1;
+  for (const p of pickups) {
+    const sellerName = p.seller?.name || "Unknown Seller";
+    const books = p.books || [];
+    for (const b of books) {
+      const price = b.finalPrice || b.sellerProposedPrice || b.aiEstimatedPrice || 0;
+      if (!map[sellerName]) map[sellerName] = { count: 0, value: 0 };
+      map[sellerName].count += 1;
+      map[sellerName].value += price;
+    }
   }
-  return Object.entries(map).map(([name, value]) => ({ name, value }));
+  return Object.entries(map)
+    .map(([name, { count, value }]) => ({
+      name,
+      booksListed: count,
+      totalValue: Math.round(value),
+      avgPrice: count > 0 ? Math.round(value / count) : 0,
+    }))
+    .sort((a, b) => b.booksListed - a.booksListed);
+}
+
+// Merges the two month-indexed trends already returned by /admin/analytics
+// (salesTrend: booksSold per month, avgPriceTrend: avgPrice per month) into
+// a single per-month dataset with revenue derived from the two, without
+// requiring any backend changes.
+function buildBooksSoldData(analytics) {
+  const salesTrend = analytics?.salesTrend || [];
+  const avgPriceTrend = analytics?.avgPriceTrend || [];
+  const avgByMonth = {};
+  for (const m of avgPriceTrend) avgByMonth[m.month] = m.avgPrice || 0;
+
+  return salesTrend.map((m) => {
+    const avgPrice = avgByMonth[m.month] ?? 0;
+    const revenue = Math.round(avgPrice * m.booksSold);
+    return {
+      month: m.month,
+      booksSold: m.booksSold,
+      avgPrice,
+      revenue,
+    };
+  });
 }

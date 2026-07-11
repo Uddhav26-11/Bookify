@@ -26,12 +26,24 @@ export default function Navbar() {
     }
   };
 
+  const isAdmin = role === "admin";
+
   return (
     <header className="sticky top-0 z-40 bg-paper/90 backdrop-blur border-b border-mint-line">
-      <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-        <Link to="/"><Logo /></Link>
+      <div
+        className={`h-16 flex items-center justify-between ${
+          isAdmin ? "px-4 sm:px-6" : "max-w-7xl mx-auto px-6"
+        }`}
+      >
+        {isAdmin ? (
+          <div className="lg:hidden">
+            <Link to="/"><Logo /></Link>
+          </div>
+        ) : (
+          <Link to="/"><Logo /></Link>
+        )}
 
-        {role !== "admin" && (
+        {!isAdmin && (
           <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-ink/80">
             {role === "customer" && (
               <Link to="/orders" className="hover:text-forest transition">My Orders</Link>
@@ -39,7 +51,7 @@ export default function Navbar() {
           </nav>
         )}
 
-        <div className="flex items-center gap-4">
+        <div className={`flex items-center gap-4 ${isAdmin ? "ml-auto" : ""}`}>
           {role === "customer" && (
             <Link to="/cart" className="relative">
               <ShoppingCart size={20} className="text-ink" />
