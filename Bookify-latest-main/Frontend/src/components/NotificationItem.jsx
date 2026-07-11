@@ -1,5 +1,5 @@
 import {
-  BookOpen, CheckCircle2, XCircle, Tag, Sparkles, ShoppingBag,
+  BookOpen, CheckCircle2, XCircle, Tag, Sparkles,
   PackageCheck, PackageX, Truck, UserPlus, AlertTriangle, Wallet, Bell, X,
 } from "lucide-react";
 import { timeAgo } from "../utils/timeAgo";
@@ -10,7 +10,6 @@ const ICONS = {
   BOOK_REJECTED: XCircle,
   PRICE_UPDATED: Tag,
   NEW_BOOK: Sparkles,
-  ORDER_PLACED: ShoppingBag,
   ORDER_ACCEPTED: PackageCheck,
   ORDER_CANCELLED: PackageX,
   ORDER_UPDATE: Truck,
@@ -26,7 +25,6 @@ const ICON_COLORS = {
   BOOK_REJECTED: "text-rose bg-rose/10",
   PRICE_UPDATED: "text-amber bg-amber/10",
   NEW_BOOK: "text-forest bg-lime/30",
-  ORDER_PLACED: "text-forest bg-mint",
   ORDER_ACCEPTED: "text-forest bg-mint",
   ORDER_CANCELLED: "text-rose bg-rose/10",
   ORDER_UPDATE: "text-forest bg-mint",
@@ -56,7 +54,7 @@ export default function NotificationItem({ notification, onMarkRead, onDelete, c
           <p className={`text-sm ${notification.read ? "font-medium text-ink/80" : "font-semibold text-ink"}`}>
             {notification.title}
           </p>
-          {!notification.read && <span className="shrink-0 mt-1.5 w-2 h-2 rounded-full bg-forest" />}
+          {!notification.read && <span className="shrink-0 mt-1.5 w-2 h-2 rounded-full bg-brand-gradient" />}
         </div>
         <p className={`text-xs mt-0.5 ${compact ? "line-clamp-2" : ""} text-muted`}>{notification.message}</p>
         <p className="text-[11px] mt-1 text-muted font-mono">{timeAgo(notification.createdAt)}</p>

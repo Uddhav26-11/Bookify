@@ -3,32 +3,6 @@ const Order = require("../models/Order");
 const Book = require("../models/Book");
 const { sendNotification, notifySafely } = require("../services/notificationService");
 
-// Notify every seller who had a book in this order, grouped so each seller
-// gets one notification even if they sold multiple books in the same order.
-async function notifySellersOfOrder(order, bookIds, customerId) {
-  const orderedBooks = await Book.find({ _id: { $in: bookIds } }).select("seller bookName");
-  const bySeller = new Map();
-  orderedBooks.forEach((b) => {
-    if (!bySeller.has(String(b.seller))) bySeller.set(String(b.seller), []);
-    bySeller.get(String(b.seller)).push(b.bookName);
-  });
-
-  await Promise.all(
-    [...bySeller.entries()].map(([sellerId, titles]) =>
-      sendNotification({
-        receiver: sellerId,
-        receiverRole: "seller",
-        sender: customerId,
-        senderName: "Customer",
-        title: "New Order",
-        message: `Customer ordered "${titles[0]}"${titles.length > 1 ? ` and ${titles.length - 1} more` : ""}.`,
-        type: "ORDER_PLACED",
-        referenceId: order._id,
-      })
-    )
-  );
-}
-
 // Creates the Order document for a completed Stripe Checkout session — and
 // marks the purchased books as sold — but is idempotent: if an Order for
 // this session already exists (created earlier by the webhook, or by a
@@ -82,8 +56,6 @@ async function createOrderFromSession(session) {
   }
 
   await Book.updateMany({ _id: { $in: bookIds } }, { isSold: true });
-
-  notifySafely(() => notifySellersOfOrder(order, bookIds, session.metadata.customerId));
 
   console.log(`Order ${order._id} created with tracking ID ${order.trackingId}`);
   return order;

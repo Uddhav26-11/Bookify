@@ -4,47 +4,37 @@ import { Upload, Sparkles, Check, X, Plus, Trash2, Landmark, CheckCircle, Indian
 import StatusPill from "../components/StatusPill";
 import { getAIEstimate } from "../data/aiPricing";
 import api from "../api/axios";
-import { getSocket } from "../api/socket";
 
-const TABS = ["Upload Book", "Track Requests", "My Sales", "Payment History", "Bank Details"];
+const TABS = ["Upload Book", "Track Requests", "Payment History", "Bank Details"];
 
 const STAT_CARDS = [
-  { label: "Completed Orders", key: "completedOrders", icon: CheckCircle },
-  { label: "Revenue", key: "revenue", icon: IndianRupee, isCurrency: true },
-  { label: "Books Sold", key: "booksSold", icon: BookOpen },
-  { label: "Pending Orders", key: "pendingOrders", icon: Clock },
+  { label: "Books Paid", key: "completedOrders", icon: CheckCircle },
+  { label: "Amount Received", key: "revenue", icon: IndianRupee, isCurrency: true },
+  { label: "Books Accepted", key: "booksSold", icon: BookOpen },
+  { label: "Pending Payments", key: "pendingOrders", icon: Clock },
 ];
 
-// Live seller stats (Completed Orders, Revenue, Books Sold, Pending Orders)
-// pulled fresh from GET /api/seller/dashboard every time this mounts — i.e.
-// on every page load/refresh — so the numbers always reflect the database
-// and never get stuck at a stale/zero value from a previous render.
+// Live seller stats (Books Paid, Amount Received, Books Accepted, Pending
+// Payments) pulled fresh from GET /api/seller/dashboard every time this
+// mounts — i.e. on every page load/refresh — so the numbers always reflect
+// the database and never get stuck at a stale/zero value from a previous
+// render.
+//
+// IMPORTANT: this is strictly the seller's sell-to-platform payout status
+// (pickup request -> admin approval -> admin pays seller). It has nothing
+// to do with whether a customer later buys the book from Bookify — sellers
+// never see customer purchase activity, so there is no live event to
+// subscribe to here; a fresh fetch on mount is enough.
 function SellerStats() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const loadStats = () => {
+  useEffect(() => {
     api
       .get("/seller/dashboard")
       .then((res) => setStats(res.data.stats))
       .catch(() => setStats((prev) => prev || { completedOrders: 0, revenue: 0, booksSold: 0, pendingOrders: 0 }))
       .finally(() => setLoading(false));
-  };
-
-  useEffect(() => {
-    loadStats();
-
-    // A customer buying one of this seller's books fires a "New Order"
-    // notification (see notificationService/orderController) — use that as
-    // the live trigger to re-pull stats from the DB instead of requiring a
-    // manual page refresh.
-    const socket = getSocket();
-    if (!socket) return;
-    const onNewNotification = (n) => {
-      if (n?.type === "ORDER_PLACED") loadStats();
-    };
-    socket.on("notification:new", onNewNotification);
-    return () => socket.off("notification:new", onNewNotification);
   }, []);
 
   return (
@@ -99,7 +89,6 @@ export default function SellerDashboard() {
       <div className="mt-8">
         {tab === "Upload Book" && <UploadBook />}
         {tab === "Track Requests" && <TrackRequests />}
-        {tab === "My Sales" && <MySales />}
         {tab === "Payment History" && <PaymentHistory />}
         {tab === "Bank Details" && <BankDetails />}
       </div>
@@ -116,7 +105,7 @@ function UploadBook() {
         <button
           onClick={() => setMode("single")}
           className={`px-4 py-2 rounded-full text-sm font-semibold transition ${
-            mode === "single" ? "bg-forest text-white" : "bg-white border border-mint-line text-ink"
+            mode === "single" ? "btn-brand text-white" : "bg-white border border-mint-line text-ink"
           }`}
         >
           Single Book
@@ -124,7 +113,7 @@ function UploadBook() {
         <button
           onClick={() => setMode("bulk")}
           className={`px-4 py-2 rounded-full text-sm font-semibold transition ${
-            mode === "bulk" ? "bg-forest text-white" : "bg-white border border-mint-line text-ink"
+            mode === "bulk" ? "btn-brand text-white" : "bg-white border border-mint-line text-ink"
           }`}
         >
           Bulk Upload (Multiple Books)
@@ -292,7 +281,7 @@ function SingleBookUpload() {
         <button
           type="submit"
           disabled={loading || files.length !== 4}
-          className="w-full bg-forest text-white font-semibold py-2.5 rounded-lg hover:bg-forest-dark transition disabled:opacity-40 flex items-center justify-center gap-2"
+          className="w-full btn-brand text-white font-semibold py-2.5 rounded-lg transition disabled:opacity-40 flex items-center justify-center gap-2"
         >
           <Sparkles size={16} /> {loading ? "Analyzing photos..." : "Get AI Price Estimate"}
         </button>
@@ -341,7 +330,7 @@ function SingleBookUpload() {
                 <button
                   onClick={acceptOffer}
                   disabled={submitting}
-                  className="flex-1 bg-forest text-white font-semibold py-2.5 rounded-lg flex items-center justify-center gap-2 disabled:opacity-50"
+                  className="flex-1 btn-brand text-white font-semibold py-2.5 rounded-lg flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   <Check size={16} /> {submitting ? "Submitting..." : "Accept Offer"}
                 </button>
@@ -524,7 +513,7 @@ function BulkBookUpload() {
       <button
         type="submit"
         disabled={submitting}
-        className="w-full bg-forest text-white font-semibold py-2.5 rounded-lg hover:bg-forest-dark transition disabled:opacity-50"
+        className="w-full btn-brand text-white font-semibold py-2.5 rounded-lg transition disabled:opacity-50"
       >
         {submitting ? "Submitting all books..." : `Submit ${books.length} Book(s)`}
       </button>
@@ -614,7 +603,7 @@ function TrackRequests() {
                           <button
                             onClick={() => respond(b._id, "Accept")}
                             disabled={respondingTo === b._id}
-                            className="flex items-center gap-1 bg-forest text-white font-semibold px-2.5 py-1.5 rounded-lg disabled:opacity-50"
+                            className="flex items-center gap-1 btn-brand text-white font-semibold px-2.5 py-1.5 rounded-lg disabled:opacity-50"
                           >
                             <Check size={12} /> Accept ₹{b.adminOfferedPrice}
                           </button>
@@ -771,80 +760,12 @@ function BankDetails() {
           <button
             type="submit"
             disabled={saving}
-            className="w-full bg-forest text-white font-semibold py-2.5 rounded-lg hover:bg-forest-dark transition disabled:opacity-50"
+            className="w-full btn-brand text-white font-semibold py-2.5 rounded-lg transition disabled:opacity-50"
           >
             {saving ? "Saving..." : "Save Bank Details"}
           </button>
         </form>
       </div>
-    </div>
-  );
-}
-
-// Orders customers have placed that include at least one of this seller's
-// books — separate from PaymentHistory above, which is about admin payouts
-// for pickups, not customer purchases.
-function MySales() {
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    api
-      .get("/orders/seller-orders")
-      .then((res) => setOrders(res.data.orders))
-      .catch((err) => setError(err.response?.data?.message || "Failed to load sales"))
-      .finally(() => setLoading(false));
-  }, []);
-
-  if (loading) return <p className="text-sm text-muted">Loading...</p>;
-  if (error) return <p className="text-sm text-rose">{error}</p>;
-
-  if (orders.length === 0) {
-    return (
-      <div className="bg-white border border-mint-line rounded-2xl p-10 text-center text-sm text-muted">
-        No sales yet. Orders customers place for your books will show up here.
-      </div>
-    );
-  }
-
-  return (
-    <div className="bg-white border border-mint-line rounded-2xl overflow-hidden">
-      <table className="w-full text-sm">
-        <thead className="bg-mint text-left text-xs font-mono text-muted uppercase">
-          <tr>
-            <th className="px-5 py-3">Book</th>
-            <th className="px-5 py-3">Customer</th>
-            <th className="px-5 py-3">Payment Status</th>
-            <th className="px-5 py-3">Order Status</th>
-            <th className="px-5 py-3">Date</th>
-          </tr>
-        </thead>
-        <tbody>
-          {orders.map((order) =>
-            // `books` was populated with a `match` on seller, so it only
-            // contains this seller's books from the order — one row per book.
-            order.books.map((b) => (
-              <tr key={`${order._id}-${b._id}`} className="border-t border-mint-line">
-                <td className="px-5 py-3 flex items-center gap-2">
-                  {b.images?.[0] && (
-                    <img src={b.images[0]} alt={b.bookName} className="w-8 h-8 rounded object-cover border border-mint-line" />
-                  )}
-                  {b.bookName}
-                </td>
-                <td className="px-5 py-3">{order.customer?.name || "—"}</td>
-                <td className="px-5 py-3">
-                  <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-semibold ${order.paymentStatus === "Paid" ? "bg-forest text-white" : "bg-amber/15 text-amber"}`}>
-                    {order.paymentStatus}
-                  </span>
-                </td>
-                <td className="px-5 py-3"><StatusPill status={order.orderStatus} /></td>
-                <td className="px-5 py-3 text-muted">{new Date(order.createdAt).toLocaleDateString()}</td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
     </div>
   );
 }
@@ -888,7 +809,7 @@ function PaymentHistory() {
             className="w-full border border-mint-line rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-forest"
           />
         </div>
-        <button type="submit" className="bg-forest text-white font-semibold px-5 py-2.5 rounded-lg hover:bg-forest-dark transition">
+        <button type="submit" className="btn-brand text-white font-semibold px-5 py-2.5 rounded-lg transition">
           Track
         </button>
       </form>
