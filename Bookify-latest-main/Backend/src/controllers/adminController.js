@@ -1,3 +1,4 @@
+// Backend/src/controllers/adminController.js
 const User = require("../models/User");
 const Book = require("../models/Book");
 const Order = require("../models/Order");
@@ -13,11 +14,6 @@ exports.getDashboardStats = async (req, res) => {
     const pendingRequests = await PickupRequest.countDocuments({
       status: { $nin: ["Completed", "Rejected"] },
     });
-    // "Completed Orders" = successfully paid orders (the sale itself is
-    // done), not necessarily physically delivered yet — delivery status is
-    // tracked separately via orderStatus. This mirrors how Revenue below is
-    // computed, so the two numbers stay consistent with each other instead
-    // of Revenue counting orders that "Completed Orders" doesn't.
     const completedOrders = await Order.countDocuments({
       paymentStatus: "Paid",
       orderStatus: { $ne: "Cancelled" },
@@ -37,6 +33,79 @@ exports.getDashboardStats = async (req, res) => {
         pendingRequests,
         completedOrders,
         revenue: revenueAgg[0]?.total || 0,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Analytics for the Overview page's charts — built only from real,
+// completed (paid, non-cancelled) orders. No dummy/static numbers.
+exports.getAnalytics = async (req, res) => {
+  try {
+    const monthlyAgg = await Order.aggregate([
+      { $match: { paymentStatus: "Paid", orderStatus: { $ne: "Cancelled" } } },
+      {
+        $project: {
+          totalAmount: 1,
+          createdAt: 1,
+          bookCount: { $size: { $ifNull: ["$books", []] } },
+        },
+      },
+      {
+        $group: {
+          _id: { year: { $year: "$createdAt" }, month: { $month: "$createdAt" } },
+          booksSold: { $sum: "$bookCount" },
+          revenue: { $sum: "$totalAmount" },
+        },
+      },
+      { $sort: { "_id.year": 1, "_id.month": 1 } },
+    ]);
+
+    const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+    const recent = monthlyAgg.slice(-12);
+
+    const salesTrend = recent.map((m) => ({
+      month: `${MONTH_NAMES[m._id.month - 1]} ${m._id.year}`,
+      booksSold: m.booksSold,
+    }));
+
+    const avgPriceTrend = recent.map((m) => ({
+      month: `${MONTH_NAMES[m._id.month - 1]} ${m._id.year}`,
+      avgPrice: m.booksSold > 0 ? Math.round((m.revenue / m.booksSold) * 100) / 100 : 0,
+    }));
+
+    const totalBooksSold = monthlyAgg.reduce((sum, m) => sum + m.booksSold, 0);
+    const totalRevenue = monthlyAgg.reduce((sum, m) => sum + m.revenue, 0);
+    const avgSellingPrice = totalBooksSold > 0 ? Math.round((totalRevenue / totalBooksSold) * 100) / 100 : 0;
+
+    let momChange = null;
+    if (recent.length >= 2) {
+      const prev = recent[recent.length - 2].booksSold;
+      const curr = recent[recent.length - 1].booksSold;
+      if (prev > 0) momChange = Math.round(((curr - prev) / prev) * 1000) / 10;
+    }
+
+    const pendingPickupRequests = await PickupRequest.countDocuments({
+      status: { $nin: ["Completed", "Rejected"] },
+    });
+    const activeSellers = await User.countDocuments({ role: "seller" });
+    const activeCustomers = await User.countDocuments({ role: "customer" });
+
+    return res.status(200).json({
+      success: true,
+      analytics: {
+        totalBooksSold,
+        totalRevenue,
+        avgSellingPrice,
+        momChange,
+        pendingPickupRequests,
+        activeSellers,
+        activeCustomers,
+        salesTrend,
+        avgPriceTrend,
       },
     });
   } catch (error) {
@@ -69,7 +138,7 @@ exports.updatePickupStatus = async (req, res) => {
       return res.status(404).json({ success: false, message: "Pickup request not found" });
     }
 
-    const booksBefore = pickup.books; // snapshot with pre-update prices, for notification messages
+    const booksBefore = pickup.books;
 
     pickup.status = status;
     await pickup.save();
@@ -161,11 +230,6 @@ exports.assignPickupExecutive = async (req, res) => {
   }
 };
 
-// Admin marks a pickup as PAID — "Online" (needs a transaction/UTR reference,
-// e.g. from a UPI/bank transfer they just made using the seller's bank
-// details), "Offline" (cash handed over, e.g. by the pickup executive), or
-// "Stripe" (admin settles the amount via Stripe — creates a real Stripe
-// test-mode payment as proof of the payout; see createStripePayoutRecord).
 exports.payPickup = async (req, res) => {
   try {
     const { id } = req.params;
@@ -202,12 +266,6 @@ exports.payPickup = async (req, res) => {
       }
 
       try {
-        // NOTE: This project doesn't use Stripe Connect (sellers don't have
-        // their own Stripe accounts), so this doesn't move real money into
-        // the seller's bank account. It creates a real Stripe payment in
-        // test mode using Stripe's built-in test card token, which gives the
-        // admin a genuine Stripe transaction ID + receipt as proof of the
-        // payout for record-keeping.
         const paymentIntent = await stripe.paymentIntents.create({
           amount: Math.round(amount * 100),
           currency: "inr",
@@ -253,7 +311,6 @@ exports.payPickup = async (req, res) => {
       .populate("books");
 
     notifySafely(async () => {
-      // Let the seller know they've been paid.
       await Promise.all(
         (updated.books || []).map((book) =>
           sendNotification({
@@ -269,8 +326,6 @@ exports.payPickup = async (req, res) => {
         )
       );
 
-      // Books become visible in the marketplace once paid (see
-      // getAllBooks marketplace filter) — announce them to every customer.
       const customers = await User.find({ role: "customer" }).select("_id");
       const customerIds = customers.map((c) => c._id);
 
@@ -294,9 +349,6 @@ exports.payPickup = async (req, res) => {
   }
 };
 
-// Admin thinks the AI price is too low/high for a book — instead of
-// silently overriding it, send the seller a counter-offer price (+ optional
-// note explaining why) and wait for the seller to Accept or Reject it.
 exports.sendCounterOffer = async (req, res) => {
   try {
     const { bookId } = req.params;
@@ -322,8 +374,6 @@ exports.sendCounterOffer = async (req, res) => {
       return res.status(404).json({ success: false, message: "Book not found" });
     }
 
-    // Reflect on the parent pickup request too so it shows up as awaiting
-    // action instead of sitting in "Requested".
     await PickupRequest.updateMany({ books: bookId }, { status: "UnderVerification" });
 
     notifySafely(() =>
@@ -354,7 +404,6 @@ exports.getAllUsers = async (req, res) => {
   }
 };
 
-// Update inventory selling price directly (admin can edit price on dashboard)
 exports.updateBookPrice = async (req, res) => {
   try {
     const { bookId } = req.params;
@@ -392,8 +441,6 @@ exports.updateBookPrice = async (req, res) => {
   }
 };
 
-// Admin updates the delivery/order status of a customer order and can
-// leave a note — this is what powers the customer-facing tracking timeline.
 exports.updateOrderStatus = async (req, res) => {
   try {
     const { orderId } = req.params;
@@ -445,7 +492,6 @@ exports.updateOrderStatus = async (req, res) => {
   }
 };
 
-// All customer orders, for the admin to see and manage delivery tracking.
 exports.getAllOrders = async (req, res) => {
   try {
     const orders = await Order.find()
@@ -458,9 +504,6 @@ exports.getAllOrders = async (req, res) => {
   }
 };
 
-// Permanently remove an order (e.g. test/junk orders, or ones left behind
-// by an abandoned/duplicate Stripe checkout whose linked customer or books
-// no longer exist). Does not touch the linked books/customer themselves.
 exports.deleteOrder = async (req, res) => {
   try {
     const { orderId } = req.params;
@@ -474,7 +517,6 @@ exports.deleteOrder = async (req, res) => {
   }
 };
 
-// Delete a book from inventory
 exports.deleteBook = async (req, res) => {
   try {
     const { bookId } = req.params;
@@ -485,12 +527,6 @@ exports.deleteBook = async (req, res) => {
   }
 };
 
-// Delete a pickup request entirely, along with any books still attached to
-// it. Previously there was no route that actually removed the
-// PickupRequest document itself — the frontend's "Delete" button could
-// only delete the attached books and flip status to "Rejected", so an
-// already-Rejected request with no books left (nothing to delete, already
-// the target status) would just sit there forever looking un-deletable.
 exports.deletePickupRequest = async (req, res) => {
   try {
     const { id } = req.params;

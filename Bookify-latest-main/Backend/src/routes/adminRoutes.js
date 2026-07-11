@@ -1,3 +1,4 @@
+// Backend/src/routes/adminRoutes.js
 const express = require("express");
 const router = express.Router();
 const {
@@ -14,11 +15,13 @@ const {
   updateOrderStatus,
   getAllOrders,
   deleteOrder,
+  getAnalytics,
 } = require("../controllers/adminController");
 const { protect } = require("../middleware/authMiddleware");
 const { authorizeRoles } = require("../middleware/roleMiddleware");
 
 router.get("/dashboard", protect, authorizeRoles("admin"), getDashboardStats);
+router.get("/analytics", protect, authorizeRoles("admin"), getAnalytics);
 router.get("/pickups", protect, authorizeRoles("admin"), getAllPickups);
 router.patch(
   "/pickups/:id/status",
