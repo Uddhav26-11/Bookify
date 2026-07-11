@@ -48,6 +48,33 @@ body { background: var(--color-paper); color: var(--color-ink); font-family: var
 @media (prefers-reduced-motion: reduce) {
   .grade-scan::after { animation: none; display: none; }
 }
+
+/* Hero redesign animations */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes slide-left {
+  from { opacity: 0; transform: translateX(24px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes float-card {
+  0%, 100% { transform: translateY(0) rotate(var(--tilt, 0deg)); }
+  50% { transform: translateY(-10px) rotate(var(--tilt, 0deg)); }
+}
+@keyframes float-icon {
+  0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.5; }
+  50% { transform: translateY(-14px) rotate(8deg); opacity: 0.85; }
+}
+
+.animate-fade-up { animation: fade-up 0.7s ease-out both; }
+.animate-slide-left { animation: slide-left 0.8s ease-out both; }
+.animate-float-card { animation: float-card 5s ease-in-out infinite; }
+.animate-float-icon { animation: float-icon 6s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-up, .animate-slide-left, .animate-float-card, .animate-float-icon { animation: none; }
+}
 h1, h2, h3, h4, h5, h6, p, span, label, button {
   cursor: default;
 }

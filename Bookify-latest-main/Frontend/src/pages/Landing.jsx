@@ -1,5 +1,8 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, Camera, Sparkles, Truck, BookOpen } from "lucide-react";
+import {
+  ArrowRight, Camera, Sparkles, Truck, BookOpen, Package,
+  GraduationCap, Repeat, ShoppingBag, CheckCircle2, CreditCard, Leaf,
+} from "lucide-react";
 import { categories, testimonials } from "../data/mockData";
 
 const steps = [
@@ -9,46 +12,134 @@ const steps = [
   { icon: BookOpen, title: "Get paid", copy: "Choose instant payment or credit within 24 hours — your call." },
 ];
 
+const trustIndicators = ["Verified Sellers", "Secure Payments", "Fast Pickup", "Affordable Prices"];
+
+const featureChips = [
+  { icon: Package, label: "Free Pickup" },
+  { icon: CreditCard, label: "Secure Payment" },
+  { icon: Leaf, label: "Eco Friendly" },
+];
+
+const stats = [
+  { value: "15K+", label: "Books Listed" },
+  { value: "8K+", label: "Happy Students" },
+  { value: "120+", label: "Cities" },
+  { value: "4.9★", label: "Average Rating" },
+];
+
+const floatingCards = [
+  { icon: BookOpen, label: "Stack of Books", tone: "bg-mint text-forest", pos: "top-0 left-4", tilt: "-4deg", delay: "0s" },
+  { icon: GraduationCap, label: "Student Reading", tone: "bg-forest text-white", pos: "top-6 right-0", tilt: "3deg", delay: "0.4s" },
+  { icon: Repeat, label: "Book Exchange", tone: "bg-white text-forest", pos: "top-40 left-0", tilt: "2deg", delay: "0.8s" },
+  { icon: Package, label: "Delivery Box", tone: "bg-lime/60 text-forest-dark", pos: "top-48 right-8", tilt: "-3deg", delay: "1.2s" },
+  { icon: ShoppingBag, label: "Online Marketplace", tone: "bg-white text-forest", pos: "top-80 left-10", tilt: "4deg", delay: "0.6s" },
+  { icon: Truck, label: "Book Pickup", tone: "bg-forest-dark text-white", pos: "top-[21rem] right-2", tilt: "-2deg", delay: "1s" },
+];
+
 export default function Landing() {
   return (
     <div>
       {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-6 pt-16 pb-20 grid md:grid-cols-2 gap-12 items-center">
-          <div>
-            <span className="inline-flex items-center gap-2 text-xs font-mono font-medium text-forest bg-mint px-3 py-1 rounded-full mb-6">
-              <Sparkles size={12} /> AI condition grading, in your pocket
+      <section className="relative overflow-hidden min-h-[85vh] md:min-h-[90vh] flex items-center bg-paper">
+        {/* Background effects */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute inset-0 bg-gradient-to-br from-mint/60 via-paper to-paper" />
+          <div className="absolute -top-24 -left-24 w-80 h-80 rounded-full bg-mint blur-3xl opacity-70" />
+          <div className="absolute top-1/3 -right-20 w-96 h-96 rounded-full bg-lime/30 blur-3xl opacity-60" />
+          <div
+            className="absolute inset-0 opacity-[0.05]"
+            style={{
+              backgroundImage: "linear-gradient(var(--color-forest) 1px, transparent 1px), linear-gradient(90deg, var(--color-forest) 1px, transparent 1px)",
+              backgroundSize: "42px 42px",
+            }}
+          />
+          <BookOpen className="hidden md:block absolute top-16 left-1/2 text-forest/20 animate-float-icon" size={30} />
+          <Sparkles className="hidden md:block absolute bottom-24 left-1/3 text-lime/60 animate-float-icon" size={22} style={{ animationDelay: "1.5s" }} />
+          <BookOpen className="hidden md:block absolute bottom-12 right-1/4 text-forest/15 animate-float-icon" size={26} style={{ animationDelay: "2.2s" }} />
+        </div>
+
+        <div className="relative max-w-7xl mx-auto px-6 py-16 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+          {/* Left content */}
+          <div className="animate-fade-up">
+            <span className="inline-flex items-center gap-2 text-xs font-mono font-medium text-forest bg-mint px-3 py-1.5 rounded-full mb-6 border border-mint-line">
+              📚 India's Smart Used Book Marketplace
             </span>
-            <h1 className="font-display text-5xl md:text-6xl font-semibold leading-[1.05] text-ink">
-              Sell your old books,<br /> instantly.
+
+            <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-tight text-ink">
+              Buy &amp; Sell <span className="text-forest">Used Books</span><br />
+              Save Money. <span className="text-forest">Save Trees.</span>
             </h1>
-            <p className="mt-5 text-lg text-muted max-w-md">
-              Upload photos, get AI price estimates and earn money — then buy your next set for less than half the MRP.
+
+            <p className="mt-5 text-lg text-gray-600 max-w-md leading-relaxed">
+              Bookify helps students buy affordable second-hand books and sell old books in just a few clicks. Every book finds a new reader instead of collecting dust.
             </p>
+
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link to="/sell" className="px-6 py-3 rounded-full bg-forest text-white font-semibold hover:bg-forest-dark transition flex items-center gap-2">
-                Sell Books <ArrowRight size={16} />
+              <Link
+                to="/sell"
+                className="w-full sm:w-auto justify-center px-6 py-3 rounded-xl bg-forest text-white font-semibold shadow-lg shadow-forest/20 hover:bg-forest-dark hover:-translate-y-0.5 hover:shadow-xl hover:shadow-forest/30 transition-all duration-300 flex items-center gap-2"
+              >
+                Sell Your Books <ArrowRight size={16} />
               </Link>
-              <Link to="/marketplace" className="px-6 py-3 rounded-full border border-mint-line text-ink font-semibold hover:bg-mint transition">
-                Buy Books
+              <Link
+                to="/marketplace"
+                className="w-full sm:w-auto justify-center px-6 py-3 rounded-xl border border-mint-line bg-white text-ink font-semibold shadow-sm hover:bg-mint hover:-translate-y-0.5 hover:shadow-md transition-all duration-300 flex items-center"
+              >
+                Browse Books
               </Link>
             </div>
+
+            <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2">
+              {trustIndicators.map((t) => (
+                <span key={t} className="inline-flex items-center gap-1.5 text-sm text-muted font-medium">
+                  <CheckCircle2 size={15} className="text-forest" /> {t}
+                </span>
+              ))}
+            </div>
+
+            <div className="mt-6 flex flex-wrap gap-3">
+              {featureChips.map((f) => (
+                <span
+                  key={f.label}
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-forest bg-white border border-mint-line px-3 py-1.5 rounded-xl shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300"
+                >
+                  <f.icon size={14} /> {f.label}
+                </span>
+              ))}
+            </div>
           </div>
-          <div className="relative">
-            <div className="grade-scan rounded-3xl overflow-hidden border border-mint-line shadow-xl shadow-forest/5">
-              <img src="https://images.unsplash.com/photo-1512820790803-83ca734da794?w=800&q=70" alt="Stack of used books" className="w-full h-full object-cover aspect-[4/3]" />
-              <div className="absolute bottom-4 left-4 right-4 bg-white/95 backdrop-blur rounded-xl p-4 flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted font-mono">AI Estimate</p>
-                  <p className="font-display text-2xl font-semibold text-ink">₹234</p>
+
+          {/* Right illustration */}
+          <div className="relative h-[420px] sm:h-[480px] lg:h-[520px] order-first lg:order-last animate-slide-left">
+            <div className="absolute inset-6 sm:inset-10 rounded-[2rem] bg-gradient-to-br from-mint via-white to-lime/20 border border-mint-line" />
+            {floatingCards.map((c, i) => (
+              <div
+                key={c.label}
+                className={`absolute ${c.pos} w-36 sm:w-40 rounded-2xl border border-white/60 shadow-xl backdrop-blur bg-white/80 p-4 animate-float-card`}
+                style={{ "--tilt": c.tilt, animationDelay: c.delay }}
+              >
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center mb-2 ${c.tone}`}>
+                  <c.icon size={18} />
                 </div>
-                <div className="text-right">
-                  <p className="text-xs text-muted font-mono">Confidence</p>
-                  <p className="font-mono font-semibold text-forest">91%</p>
-                </div>
+                <p className="text-xs font-semibold text-ink leading-snug">{c.label}</p>
               </div>
-            </div>
+            ))}
           </div>
+        </div>
+      </section>
+
+      {/* Stats */}
+      <section className="max-w-7xl mx-auto px-6 -mt-10 sm:-mt-16 relative z-10">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {stats.map((s) => (
+            <div
+              key={s.label}
+              className="rounded-xl bg-white/70 backdrop-blur border border-mint-line shadow-md p-5 text-center hover:-translate-y-1 hover:shadow-lg transition-all duration-300"
+            >
+              <p className="font-display text-2xl sm:text-3xl font-bold text-forest">{s.value}</p>
+              <p className="text-xs sm:text-sm text-muted mt-1">{s.label}</p>
+            </div>
+          ))}
         </div>
       </section>
 
