@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { ShieldAlert } from "lucide-react";
+import BackButton from "../components/BackButton";
 
 // Shown when a logged-in user (e.g. a customer) tries to open a route
 // that belongs to a different role (e.g. /sell or /seller) by typing the
@@ -12,6 +13,9 @@ export default function AccessDenied() {
 
   return (
     <div className="max-w-md mx-auto px-6 py-24 text-center">
+      <div className="flex justify-center mb-8">
+        <BackButton fallback={homePath} />
+      </div>
       <div className="w-14 h-14 rounded-full bg-rose/10 text-rose flex items-center justify-center mx-auto mb-5">
         <ShieldAlert size={26} />
       </div>

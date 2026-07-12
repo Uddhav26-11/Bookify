@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { Menu } from "lucide-react";
 import api from "../api/axios";
+import BackButton from "../components/BackButton";
 import AdminSidebar, { MENU } from "../components/admin/AdminSidebar";
 import AdminOverview from "../components/admin/AdminOverview";
 import AdminPickups from "../components/admin/AdminPickups";
@@ -148,7 +149,8 @@ export default function AdminDashboard() {
           >
             <Menu size={20} />
           </button>
-          <h2 className="font-semibold text-ink text-sm sm:text-base">{pageTitle}</h2>
+          <h2 className="font-semibold text-ink text-sm sm:text-base flex-1">{pageTitle}</h2>
+          <BackButton fallback="/" label="Back" className="hidden sm:inline-flex" />
         </div>
 
         <div className="flex-1 px-4 sm:px-6 py-6 sm:py-8 max-w-[1600px] w-full mx-auto">

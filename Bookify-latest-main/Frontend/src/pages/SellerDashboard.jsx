@@ -3,8 +3,10 @@ import { useSelector } from "react-redux";
 import {
   Upload, Sparkles, Check, X, Plus, Trash2, Landmark, CheckCircle, IndianRupee,
   BookOpen, Clock, ChevronDown, GraduationCap, School, Award, Library, Search,
+  ArrowLeft, ArrowRight, PartyPopper,
 } from "lucide-react";
 import StatusPill from "../components/StatusPill";
+import BackButton from "../components/BackButton";
 import { getAIEstimate } from "../data/aiPricing";
 import api from "../api/axios";
 
@@ -14,10 +16,10 @@ const TABS = ["Upload Book", "Track Requests", "Payment History", "Bank Details"
 /* Shared option lists for the category-driven upload flow            */
 /* ------------------------------------------------------------------ */
 const CATEGORIES = [
-  { id: "school", label: "School Books", icon: School },
-  { id: "college", label: "College Books", icon: GraduationCap },
-  { id: "competitive", label: "Competitive Exam Books", icon: Award },
-  { id: "other", label: "Other Books", icon: Library },
+  { id: "school", label: "School Books", icon: School, emoji: "📘", description: "NCERT, CBSE, ICSE & State Board textbooks" },
+  { id: "college", label: "College Books", icon: GraduationCap, emoji: "🎓", description: "Engineering, degree & semester course books" },
+  { id: "competitive", label: "Competitive Exam", icon: Award, emoji: "📝", description: "UPSC, SSC, JEE, NEET & other exam prep" },
+  { id: "other", label: "Other Books", icon: Library, emoji: "📖", description: "Fiction, self-help, comics & more" },
 ];
 
 const BOARD_OPTIONS = ["CBSE", "ICSE", "State Board", "Other"];
@@ -224,10 +226,10 @@ function SelectField({ label, value, onChange, options, placeholder = "Select an
 // The full block of category-dependent dropdowns (Board/Class/Subject,
 // Course/Year/Semester/Subject, Exam Type, or Other Category) followed by
 // Book Name / Author / Publication. Shared by the single and bulk forms.
-function CategoryFormFields({ f, set }) {
+function CategoryFormFields({ f, set, hideCategorySelector = false }) {
   return (
     <div className="space-y-4">
-      <CategorySelector value={f.category} onChange={(v) => set({ category: v })} />
+      {!hideCategorySelector && <CategorySelector value={f.category} onChange={(v) => set({ category: v })} />}
 
       {f.category === "school" && (
         <div className="grid sm:grid-cols-2 gap-4 animate-[fadeIn_0.2s_ease-out]">
@@ -367,7 +369,8 @@ export default function SellerDashboard() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
-      <h1 className="text-2xl sm:text-3xl font-bold text-ink">Seller Dashboard</h1>
+      <BackButton fallback="/" />
+      <h1 className="text-2xl sm:text-3xl font-bold text-ink mt-5">Seller Dashboard</h1>
       <p className="text-muted text-sm mt-1">Upload books, track pickup requests, and view your payments.</p>
 
       <div className="mt-6">
@@ -427,7 +430,149 @@ function UploadBook() {
   );
 }
 
+const WIZARD_STEPS = [
+  { n: 1, name: "Choose Category", short: "Category" },
+  { n: 2, name: "Book Details", short: "Details" },
+  { n: 3, name: "AI Review", short: "AI Review" },
+];
+
+/* ------------------------------------------------------------------ */
+/* Registration-style progress indicator — stays visible above every   */
+/* step, on both desktop (stepper with connecting line) and mobile     */
+/* (compact "Step X of 3" + progress bar).                             */
+/* ------------------------------------------------------------------ */
+function ProgressIndicator({ step }) {
+  const pct = Math.round((step / WIZARD_STEPS.length) * 100);
+  const current = WIZARD_STEPS.find((s) => s.n === step);
+
+  return (
+    <div className="mb-6 sm:mb-8">
+      {/* Mobile — compact step counter + progress bar */}
+      <div className="sm:hidden">
+        <div className="flex items-center justify-between text-xs font-mono text-muted mb-1.5">
+          <span>Step {step} of {WIZARD_STEPS.length}</span>
+          <span className="text-forest font-semibold">{pct}% Complete</span>
+        </div>
+        <div className="h-1.5 rounded-full bg-mint-line overflow-hidden">
+          <div className="h-full rounded-full btn-brand transition-all duration-500 ease-out" style={{ width: `${pct}%` }} />
+        </div>
+        <p className="font-display font-semibold text-ink text-base mt-2">{current?.name}</p>
+      </div>
+
+      {/* Desktop — full stepper with circles + connecting lines */}
+      <div className="hidden sm:flex items-center">
+        {WIZARD_STEPS.map((s, i) => {
+          const done = step > s.n;
+          const active = step === s.n;
+          return (
+            <div key={s.n} className={`flex items-center ${i < WIZARD_STEPS.length - 1 ? "flex-1" : ""}`}>
+              <div className="flex flex-col items-center gap-2 shrink-0">
+                <div
+                  className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-all duration-300 ${
+                    done
+                      ? "btn-brand text-white border-transparent"
+                      : active
+                      ? "border-forest text-forest bg-mint shadow-sm scale-110"
+                      : "border-mint-line text-muted bg-white"
+                  }`}
+                >
+                  {done ? <Check size={16} /> : s.n}
+                </div>
+                <span className={`text-xs font-semibold whitespace-nowrap ${active ? "text-forest" : done ? "text-ink" : "text-muted"}`}>
+                  {s.name}
+                </span>
+              </div>
+              {i < WIZARD_STEPS.length - 1 && (
+                <div className="flex-1 h-0.5 mx-2 -mt-6 rounded-full overflow-hidden bg-mint-line">
+                  <div
+                    className="h-full btn-brand transition-all duration-500 ease-out"
+                    style={{ width: step > s.n ? "100%" : "0%" }}
+                  />
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Step 1 — large, tappable category cards (icon + title + blurb)      */
+/* ------------------------------------------------------------------ */
+function CategoryStepCards({ value, onChange }) {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {CATEGORIES.map((c) => {
+        const active = value === c.id;
+        return (
+          <button
+            key={c.id}
+            type="button"
+            onClick={() => onChange(c.id)}
+            className={`group text-left rounded-2xl border-2 p-5 sm:p-6 transition-all duration-200 active:scale-[0.98] ${
+              active
+                ? "border-forest bg-mint shadow-md shadow-forest/10"
+                : "border-mint-line bg-white hover:border-forest/40 hover:bg-mint/40 hover:-translate-y-0.5"
+            }`}
+          >
+            <div className="flex items-start gap-4">
+              <div
+                className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl shrink-0 transition-colors ${
+                  active ? "btn-brand text-white" : "bg-mint text-forest"
+                }`}
+              >
+                <span aria-hidden>{c.emoji}</span>
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <h3 className={`font-display font-semibold text-base ${active ? "text-forest" : "text-ink"}`}>{c.label}</h3>
+                  {active && <CheckCircle size={16} className="text-forest shrink-0" />}
+                </div>
+                <p className="text-xs text-muted mt-1 leading-relaxed">{c.description}</p>
+              </div>
+            </div>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Step nav row — Previous / Next (or Submit on the last step)         */
+/* ------------------------------------------------------------------ */
+function WizardNav({ step, onBack, onNext, nextLabel = "Next", nextDisabled = false, hideNext = false }) {
+  return (
+    <div className="flex gap-3 mt-6 sm:mt-8">
+      {step > 1 && (
+        <button
+          type="button"
+          onClick={onBack}
+          className="flex-1 sm:flex-none sm:px-6 border border-mint-line text-ink font-semibold py-3 sm:py-2.5 rounded-lg flex items-center justify-center gap-2 hover:bg-mint transition"
+        >
+          <ArrowLeft size={16} /> Previous
+        </button>
+      )}
+      {!hideNext && (
+        <button
+          type="button"
+          onClick={onNext}
+          disabled={nextDisabled}
+          className="flex-1 btn-brand text-white font-semibold py-3 sm:py-2.5 rounded-lg flex items-center justify-center gap-2 disabled:opacity-40 transition"
+        >
+          {nextLabel} <ArrowRight size={16} />
+        </button>
+      )}
+    </div>
+  );
+}
+
 function SingleBookUpload() {
+  const [step, setStep] = useState(1);
+  const [stepError, setStepError] = useState("");
+
   const [cat, setCat] = useState(emptyCategoryForm());
   const setCatFields = (patch) => setCat((prev) => ({ ...prev, ...patch }));
   const [sellerPrice, setSellerPrice] = useState("");
@@ -466,18 +611,9 @@ function SingleBookUpload() {
     });
   };
 
-  const submit = async (e) => {
-    e.preventDefault();
+  const runAIAnalysis = async () => {
     setError("");
 
-    if (!categoryComplete(cat)) {
-      setError("Please complete the category details above.");
-      return;
-    }
-    if (!cat.bookName) {
-      setError("Please enter the book name.");
-      return;
-    }
     if (files.length !== 4) {
       setError("Please upload exactly 4 photos (cover, back, spine, and any damage).");
       return;
@@ -530,137 +666,246 @@ function SingleBookUpload() {
     }
   };
 
+  const startOver = () => {
+    setStep(1);
+    setStepError("");
+    setCat(emptyCategoryForm());
+    setSellerPrice("");
+    setFiles([]);
+    setPreviews([]);
+    setEstimate(null);
+    setDecision(null);
+    setError("");
+  };
+
+  const goNext = () => {
+    if (step === 1) {
+      if (!cat.category) {
+        setStepError("Please choose a book category to continue.");
+        return;
+      }
+    }
+    if (step === 2) {
+      if (!categoryComplete(cat)) {
+        setStepError("Please fill in all required fields before continuing.");
+        return;
+      }
+      if (!cat.bookName.trim()) {
+        setStepError("Please enter the book name.");
+        return;
+      }
+    }
+    setStepError("");
+    setStep((s) => Math.min(3, s + 1));
+  };
+
+  const goBack = () => {
+    setStepError("");
+    setStep((s) => Math.max(1, s - 1));
+  };
+
   return (
-    <div className="grid lg:grid-cols-2 gap-6 lg:gap-8">
-      <form onSubmit={submit} className="bg-white border border-mint-line rounded-2xl p-4 sm:p-6 space-y-5">
-        <CategoryFormFields f={cat} set={setCatFields} />
+    <div className="bg-white border border-mint-line rounded-2xl p-4 sm:p-8">
+      <ProgressIndicator step={step} />
 
-        <div className="grid sm:grid-cols-2 gap-4">
-          <div>
-            <label className="text-xs font-medium text-muted block mb-1">Condition</label>
-            <select
-              value={cat.condition}
-              onChange={(e) => setCatFields({ condition: e.target.value })}
-              className="w-full border border-mint-line rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-forest"
-            >
-              {["Poor", "Fair", "Good", "Excellent"].map((c) => <option key={c}>{c}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="text-xs font-medium text-muted block mb-1">Your Asking Price (₹) — optional</label>
-            <input
-              type="number"
-              min="0"
-              placeholder="e.g. 150"
-              value={sellerPrice}
-              onChange={(e) => setSellerPrice(e.target.value)}
-              className="w-full border border-mint-line rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-forest"
-            />
-          </div>
+      {/* ---------------- Step 1 — Category ---------------- */}
+      {step === 1 && (
+        <div className="animate-[fadeIn_0.25s_ease-out]">
+          <h2 className="font-display text-lg sm:text-xl font-semibold text-ink">What type of book do you want to sell?</h2>
+          <p className="text-sm text-muted mt-1 mb-5">Pick the category that best matches your book.</p>
+          <CategoryStepCards value={cat.category} onChange={(v) => setCatFields({ category: v })} />
+          {stepError && <p className="text-rose text-sm font-medium mt-4">{stepError}</p>}
+          <WizardNav step={step} onNext={goNext} nextDisabled={!cat.category} />
         </div>
-        <div>
-          <label className="text-xs font-medium text-muted block mb-1">Photos — exactly 4 required</label>
-          <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-mint-line rounded-xl py-8 cursor-pointer hover:bg-mint transition active:scale-[0.99]">
-            <Upload size={20} className="text-forest" />
-            <span className="text-sm text-muted text-center px-4">Upload cover, back, spine, and any damage (4 photos, one at a time or together)</span>
-            <input type="file" accept="image/*" multiple onChange={onFile} className="hidden" />
-          </label>
-          <p className={`text-xs mt-2 font-medium ${files.length === 4 ? "text-forest" : "text-muted"}`}>
-            {files.length}/4 photos selected
-          </p>
-          {previews.length > 0 && (
-            <div className="flex gap-2 mt-3 flex-wrap">
-              {previews.map((src, i) => (
-                <div key={i} className="relative">
-                  <img src={src} alt="" className="w-16 h-16 object-cover rounded-lg border border-mint-line" />
-                  <button
-                    type="button"
-                    onClick={() => removeFile(i)}
-                    className="absolute -top-2 -right-2 bg-rose text-white rounded-full w-5 h-5 flex items-center justify-center text-xs leading-none"
-                    aria-label="Remove photo"
+      )}
+
+      {/* ---------------- Step 2 — Book Details ---------------- */}
+      {step === 2 && (
+        <div className="animate-[fadeIn_0.25s_ease-out]">
+          <h2 className="font-display text-lg sm:text-xl font-semibold text-ink">Tell us about the book</h2>
+          <p className="text-sm text-muted mt-1 mb-5">These details help buyers find your book and help our AI price it accurately.</p>
+          <CategoryFormFields f={cat} set={setCatFields} hideCategorySelector />
+          {stepError && <p className="text-rose text-sm font-medium mt-4">{stepError}</p>}
+          <WizardNav step={step} onBack={goBack} onNext={goNext} nextDisabled={!categoryComplete(cat) || !cat.bookName.trim()} />
+        </div>
+      )}
+
+      {/* ---------------- Step 3 — AI Verification & Price Review ---------------- */}
+      {step === 3 && (
+        <div className="animate-[fadeIn_0.25s_ease-out]">
+          <h2 className="font-display text-lg sm:text-xl font-semibold text-ink">AI Verification &amp; Price Review</h2>
+          <p className="text-sm text-muted mt-1 mb-5">Upload photos so our AI can assess condition and suggest a fair price.</p>
+
+          <div className="grid lg:grid-cols-2 gap-6 lg:gap-8">
+            <div className="space-y-5">
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-medium text-muted block mb-1">Your Condition Assessment</label>
+                  <select
+                    value={cat.condition}
+                    onChange={(e) => setCatFields({ condition: e.target.value })}
+                    className="w-full border border-mint-line rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-forest"
                   >
-                    <X size={12} />
-                  </button>
+                    {["Poor", "Fair", "Good", "Excellent"].map((c) => <option key={c}>{c}</option>)}
+                  </select>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-        {error && <p className="text-rose text-sm font-medium">{error}</p>}
-        <button
-          type="submit"
-          disabled={loading || files.length !== 4}
-          className="w-full btn-brand text-white font-semibold py-3 sm:py-2.5 rounded-lg transition disabled:opacity-40 flex items-center justify-center gap-2 sticky bottom-3 sm:static shadow-lg sm:shadow-none"
-        >
-          <Sparkles size={16} /> {loading ? "Analyzing photos..." : "Get AI Price Estimate"}
-        </button>
-      </form>
+                <div>
+                  <label className="text-xs font-medium text-muted block mb-1">Seller Requested Price (₹) — optional</label>
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="e.g. 150"
+                    value={sellerPrice}
+                    onChange={(e) => setSellerPrice(e.target.value)}
+                    className="w-full border border-mint-line rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-forest"
+                  />
+                </div>
+              </div>
 
-      <div className="bg-mint border border-mint-line rounded-2xl p-4 sm:p-5 flex flex-col">
-        <h3 className="font-bold text-sm sm:text-base text-ink mb-3">AI Pricing Result</h3>
-        {!estimate && !loading && (
-          <p className="text-xs sm:text-sm text-muted flex-1 flex items-center justify-center text-center py-6">
-            Upload photos and submit the form to see your instant estimate here.
-          </p>
-        )}
-        {loading && (
-          <div className="flex-1 flex flex-col items-center justify-center gap-2 text-muted text-xs sm:text-sm py-6">
-            <div className="w-8 h-8 border-4 border-forest/20 border-t-forest rounded-full animate-spin" />
-            Scanning cover condition, corners, and binding...
-          </div>
-        )}
-        {estimate && !loading && (
-          <div className="space-y-3">
-            <div className="text-center">
-              <p className="text-[11px] font-mono text-muted">Estimated Selling Price</p>
-              <p className="text-3xl font-bold text-ink">₹{estimate.priceEstimate}</p>
-              <p className="text-xs text-muted mt-0.5">Confidence: {estimate.confidence}%</p>
-            </div>
-            {estimate.verdict && (
-              <div
-                className={`rounded-lg p-3 text-xs font-medium border ${
-                  estimate.verdict === "fair"
-                    ? "bg-white border-forest/30 text-forest"
-                    : "bg-white border-rose/30 text-rose"
-                }`}
+              <div>
+                <label className="text-xs font-medium text-muted block mb-1">Upload Book Images — exactly 4 required</label>
+                <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-mint-line rounded-xl py-8 cursor-pointer hover:bg-mint transition active:scale-[0.99]">
+                  <Upload size={20} className="text-forest" />
+                  <span className="text-sm text-muted text-center px-4">Upload cover, back, spine, and any damage (4 photos, one at a time or together)</span>
+                  <input type="file" accept="image/*" multiple onChange={onFile} className="hidden" />
+                </label>
+                <p className={`text-xs mt-2 font-medium ${files.length === 4 ? "text-forest" : "text-muted"}`}>
+                  {files.length}/4 photos selected
+                </p>
+                {previews.length > 0 && (
+                  <div className="flex gap-2 mt-3 flex-wrap">
+                    {previews.map((src, i) => (
+                      <div key={i} className="relative">
+                        <img src={src} alt="" className="w-16 h-16 object-cover rounded-lg border border-mint-line" />
+                        <button
+                          type="button"
+                          onClick={() => removeFile(i)}
+                          className="absolute -top-2 -right-2 bg-rose text-white rounded-full w-5 h-5 flex items-center justify-center text-xs leading-none"
+                          aria-label="Remove photo"
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {error && !estimate && <p className="text-rose text-sm font-medium">{error}</p>}
+
+              <button
+                type="button"
+                onClick={runAIAnalysis}
+                disabled={loading || files.length !== 4}
+                className="w-full btn-brand text-white font-semibold py-3 sm:py-2.5 rounded-lg transition disabled:opacity-40 flex items-center justify-center gap-2 shadow-lg sm:shadow-none"
               >
-                {estimate.verdict === "too_high" && "⬇ Your price looks a bit high — "}
-                {estimate.verdict === "too_low" && "⬆ Your price looks a bit low — "}
-                {estimate.verdict === "fair" && "✓ Fair price — "}
-                {estimate.verdictNote}
-              </div>
-            )}
-            <p className="text-[11px] text-muted italic border-t border-mint-line pt-3">
-              This is an AI-generated estimate. Final price may increase or decrease after physical inspection.
-            </p>
-            {error && <p className="text-rose text-sm font-medium text-center">{error}</p>}
-            {!decision ? (
-              <div className="flex gap-3">
-                <button
-                  onClick={acceptOffer}
-                  disabled={submitting}
-                  className="flex-1 btn-brand text-white font-semibold py-2.5 rounded-lg flex items-center justify-center gap-2 disabled:opacity-50"
-                >
-                  <Check size={16} /> {submitting ? "Submitting..." : "Accept Offer"}
-                </button>
-                <button
-                  onClick={() => setDecision("rejected")}
-                  disabled={submitting}
-                  className="flex-1 border border-mint-line font-semibold py-2.5 rounded-lg flex items-center justify-center gap-2 text-ink"
-                >
-                  <X size={16} /> Reject Offer
-                </button>
-              </div>
-            ) : decision === "accepted" ? (
-              <div className="bg-white border border-mint-line rounded-lg p-3 text-sm text-forest font-medium text-center">
-                Offer accepted — pickup request created. Status: <StatusPill status="Requested" />
-              </div>
-            ) : (
-              <p className="text-center text-sm text-muted">Offer declined. You can re-submit with new photos anytime.</p>
-            )}
+                <Sparkles size={16} /> {loading ? "Analyzing photos..." : "Run AI Condition Analysis"}
+              </button>
+            </div>
+
+            <div className="bg-mint border border-mint-line rounded-2xl p-4 sm:p-5 flex flex-col">
+              <h3 className="font-bold text-sm sm:text-base text-ink mb-3">AI Analysis Result</h3>
+              {!estimate && !loading && (
+                <p className="text-xs sm:text-sm text-muted flex-1 flex items-center justify-center text-center py-6">
+                  Upload your 4 photos and run the AI analysis to see the condition score and suggested price here.
+                </p>
+              )}
+              {loading && (
+                <div className="flex-1 flex flex-col items-center justify-center gap-2 text-muted text-xs sm:text-sm py-6">
+                  <div className="w-8 h-8 border-4 border-forest/20 border-t-forest rounded-full animate-spin" />
+                  Scanning cover condition, corners, and binding...
+                </div>
+              )}
+              {estimate && !loading && (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3 text-center">
+                    <div className="bg-white rounded-xl border border-mint-line py-3">
+                      <p className="text-[10px] font-mono text-muted">AI Score</p>
+                      <p className="text-xl font-bold text-forest">{estimate.confidence}%</p>
+                    </div>
+                    <div className="bg-white rounded-xl border border-mint-line py-3">
+                      <p className="text-[10px] font-mono text-muted">Suggested Price</p>
+                      <p className="text-xl font-bold text-ink">₹{estimate.priceEstimate}</p>
+                    </div>
+                  </div>
+                  {sellerPrice && (
+                    <div className="bg-white rounded-xl border border-mint-line py-2.5 text-center">
+                      <p className="text-[10px] font-mono text-muted">Your Requested Price</p>
+                      <p className="text-sm font-semibold text-ink">₹{sellerPrice}</p>
+                    </div>
+                  )}
+                  {estimate.verdict && (
+                    <div
+                      className={`rounded-lg p-3 text-xs font-medium border ${
+                        estimate.verdict === "fair"
+                          ? "bg-white border-forest/30 text-forest"
+                          : "bg-white border-rose/30 text-rose"
+                      }`}
+                    >
+                      {estimate.verdict === "too_high" && "⬇ Your price looks a bit high — "}
+                      {estimate.verdict === "too_low" && "⬆ Your price looks a bit low — "}
+                      {estimate.verdict === "fair" && "✓ Fair price — "}
+                      {estimate.verdictNote}
+                    </div>
+                  )}
+                  <p className="text-[11px] text-muted italic border-t border-mint-line pt-3">
+                    This is an AI-generated estimate. Final price may increase or decrease after physical inspection.
+                  </p>
+                  {error && <p className="text-rose text-sm font-medium text-center">{error}</p>}
+                  {!decision ? (
+                    <div className="flex gap-3">
+                      <button
+                        onClick={acceptOffer}
+                        disabled={submitting}
+                        className="flex-1 btn-brand text-white font-semibold py-2.5 rounded-lg flex items-center justify-center gap-2 disabled:opacity-50"
+                      >
+                        <Check size={16} /> {submitting ? "Submitting..." : "Submit Book Request"}
+                      </button>
+                      <button
+                        onClick={() => setDecision("rejected")}
+                        disabled={submitting}
+                        className="flex-1 border border-mint-line font-semibold py-2.5 rounded-lg flex items-center justify-center gap-2 text-ink"
+                      >
+                        <X size={16} /> Reject
+                      </button>
+                    </div>
+                  ) : decision === "accepted" ? (
+                    <div className="bg-white border border-forest/30 rounded-xl p-4 text-center animate-[fadeIn_0.25s_ease-out]">
+                      <div className="w-12 h-12 rounded-full bg-mint text-forest flex items-center justify-center mx-auto mb-2">
+                        <PartyPopper size={22} />
+                      </div>
+                      <p className="text-sm font-semibold text-forest">Request submitted successfully!</p>
+                      <p className="text-xs text-muted mt-1">
+                        Pickup request created. Status: <StatusPill status="Requested" />
+                      </p>
+                      <button
+                        type="button"
+                        onClick={startOver}
+                        className="mt-4 text-xs font-semibold text-forest hover:underline"
+                      >
+                        Upload another book
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="text-center">
+                      <p className="text-sm text-muted">Offer declined. Adjust your details or re-submit with new photos anytime.</p>
+                      <button
+                        type="button"
+                        onClick={() => { setDecision(null); setEstimate(null); }}
+                        className="mt-3 text-xs font-semibold text-forest hover:underline"
+                      >
+                        Try again
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
-        )}
-      </div>
+
+          {decision !== "accepted" && <WizardNav step={step} onBack={goBack} hideNext />}
+        </div>
+      )}
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { ShieldCheck, Truck } from "lucide-react";
 import ConditionMeter from "../components/ConditionMeter";
+import BackButton from "../components/BackButton";
 import { addToCart } from "../store/cartSlice";
 import api from "../api/axios";
 
@@ -53,7 +54,9 @@ export default function BookDetails() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-10 grid md:grid-cols-2 gap-10">
+    <div className="max-w-6xl mx-auto px-6 py-10">
+      <BackButton fallback="/marketplace" className="mb-6" />
+      <div className="grid md:grid-cols-2 gap-10">
       <div className="grade-scan rounded-2xl overflow-hidden border border-mint-line bg-mint">
         <img src={book.image} alt={book.title} className="w-full aspect-[4/3] object-cover" />
       </div>
@@ -98,6 +101,7 @@ export default function BookDetails() {
             Buy Now
           </Link>
         </div>
+      </div>
       </div>
     </div>
   );

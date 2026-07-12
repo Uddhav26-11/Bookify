@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { Trash2 } from "lucide-react";
 import { removeFromCart } from "../store/cartSlice";
+import BackButton from "../components/BackButton";
 import api from "../api/axios";
 
 export default function Cart() {
@@ -52,7 +53,8 @@ export default function Cart() {
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-10">
-      <h1 className="font-display text-3xl font-semibold text-ink">Your Cart</h1>
+      <BackButton fallback="/marketplace" />
+      <h1 className="font-display text-3xl font-semibold text-ink mt-5">Your Cart</h1>
 
       {items.length === 0 ? (
         <p className="text-muted mt-6">Your cart is empty.</p>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Package, Search, Receipt, MapPin } from "lucide-react";
 import StatusPill from "../components/StatusPill";
+import BackButton from "../components/BackButton";
 import api from "../api/axios";
 
 const STEPS = ["Placed", "Confirmed", "Shipped", "Out for Delivery", "Delivered"];
@@ -153,7 +154,8 @@ export default function MyOrders() {
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-10">
-      <h1 className="text-3xl font-bold text-ink flex items-center gap-3">
+      <BackButton fallback="/customer" />
+      <h1 className="text-3xl font-bold text-ink flex items-center gap-3 mt-5">
         <Package size={28} className="text-forest" /> My Orders
       </h1>
       <p className="text-muted text-sm mt-1">Track your deliveries and view your bills.</p>

@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Search } from "lucide-react";
 import BookCard from "../components/BookCard";
+import BackButton from "../components/BackButton";
 import { categories } from "../data/mockData";
 import api from "../api/axios";
 
@@ -25,10 +27,12 @@ export default function Marketplace() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const [query, setQuery] = useState("");
+  const [searchParams] = useSearchParams();
+  const [query, setQuery] = useState(searchParams.get("q") || "");
   const [board, setBoard] = useState("All");
   const [condition, setCondition] = useState("All");
   const [sort, setSort] = useState("relevance");
+  const categoryParam = searchParams.get("category");
 
   useEffect(() => {
     api
@@ -37,6 +41,17 @@ export default function Marketplace() {
       .catch((err) => setError(err.response?.data?.message || "Failed to load books."))
       .finally(() => setLoading(false));
   }, []);
+
+  // Quick-category chips on the dashboard link here with ?category=school etc.
+  // The backend doesn't have a dedicated category field, so it's used as a
+  // best-effort board filter instead of leaving the link dead.
+  useEffect(() => {
+    if (!categoryParam) return;
+    const map = { school: "CBSE", college: "College", competitive: "Competitive" };
+    const guess = map[categoryParam];
+    if (guess) setBoard((prev) => (prev === "All" ? guess : prev));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [categoryParam, inventory]);
 
   const boards = ["All", ...new Set(inventory.map((b) => b.board).filter(Boolean))];
   const conditions = ["All", ...new Set(inventory.map((b) => b.condition).filter(Boolean))];
@@ -52,7 +67,8 @@ export default function Marketplace() {
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-10">
-      <h1 className="font-display text-3xl font-semibold text-ink">Buy Books</h1>
+      <BackButton fallback="/" />
+      <h1 className="font-display text-3xl font-semibold text-ink mt-5">Buy Books</h1>
       <p className="text-muted text-sm mt-1">Quality-checked used books, at a fraction of the price.</p>
 
       <div className="relative mt-6 mb-4">

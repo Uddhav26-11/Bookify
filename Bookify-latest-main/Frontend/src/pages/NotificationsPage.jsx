@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { CheckCheck, Bell } from "lucide-react";
 import NotificationItem from "../components/NotificationItem";
+import BackButton from "../components/BackButton";
 import {
   fetchNotifications,
   markNotificationRead,
@@ -61,6 +62,7 @@ export default function NotificationsPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-6 py-10">
+      <BackButton fallback="/" className="mb-5" />
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="font-display text-2xl text-ink">Notifications</h1>
