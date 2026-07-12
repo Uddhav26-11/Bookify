@@ -58,6 +58,20 @@ async function createOrderFromSession(session) {
   await Book.updateMany({ _id: { $in: bookIds } }, { isSold: true });
 
   console.log(`Order ${order._id} created with tracking ID ${order.trackingId}`);
+
+  notifySafely(() =>
+    sendNotification({
+      receiver: "admin",
+      receiverRole: "admin",
+      sender: order.customer,
+      senderName: "Customer",
+      title: "New Order Received",
+      message: `A new order (${order.trackingId}) worth ₹${order.totalAmount} has been placed and paid.`,
+      type: "NEW_ORDER",
+      referenceId: order._id,
+    })
+  );
+
   return order;
 }
 
