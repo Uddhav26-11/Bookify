@@ -303,10 +303,11 @@ function CategoryFormFields({ f, set }) {
 }
 
 const STAT_CARDS = [
-  { label: "Books Paid", key: "completedOrders", icon: CheckCircle },
-  { label: "Amount Received", key: "revenue", icon: IndianRupee, isCurrency: true },
-  { label: "Books Accepted", key: "booksSold", icon: BookOpen },
-  { label: "Pending Payments", key: "pendingOrders", icon: Clock },
+  { label: "Total Books", key: "totalBooks", icon: BookOpen },
+  { label: "Pending Books", key: "pendingBooks", icon: Clock },
+  { label: "Approved Books", key: "approvedBooks", icon: CheckCircle },
+  { label: "Sold Books", key: "soldBooks", icon: BookOpen },
+  { label: "Earnings", key: "earnings", icon: IndianRupee, isCurrency: true },
 ];
 
 // Live seller stats (Books Paid, Amount Received, Books Accepted, Pending
@@ -333,24 +334,30 @@ function SellerStats() {
   }, []);
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
-      {STAT_CARDS.map((c) => (
-        <div key={c.key} className="bg-white border border-mint-line rounded-2xl p-3.5 sm:p-5 flex items-center gap-3 sm:gap-4">
-          <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-mint flex items-center justify-center text-forest shrink-0">
-            <c.icon size={18} />
+    <div className="bg-white border border-mint-line rounded-2xl p-4 sm:p-6 mb-6 sm:mb-8 shadow-sm">
+      <h2 className="font-bold text-sm sm:text-base text-ink mb-3 sm:mb-4">Overview</h2>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+        {STAT_CARDS.map((c) => (
+          <div
+            key={c.key}
+            className="flex items-center gap-2.5 sm:gap-3 rounded-xl bg-mint/60 border border-mint-line px-3 py-2.5 sm:px-4 sm:py-3 min-w-0"
+          >
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-white flex items-center justify-center text-forest shrink-0">
+              <c.icon size={16} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] sm:text-xs text-muted font-mono truncate">{c.label}</p>
+              <p className="text-sm sm:text-xl font-bold text-ink truncate">
+                {loading
+                  ? "…"
+                  : c.isCurrency
+                  ? `₹${(stats?.[c.key] || 0).toLocaleString("en-IN")}`
+                  : (stats?.[c.key] || 0).toLocaleString("en-IN")}
+              </p>
+            </div>
           </div>
-          <div className="min-w-0">
-            <p className="text-[10px] sm:text-xs text-muted font-mono truncate">{c.label}</p>
-            <p className="text-lg sm:text-2xl font-semibold text-ink truncate">
-              {loading
-                ? "…"
-                : c.isCurrency
-                ? `₹${(stats?.[c.key] || 0).toLocaleString("en-IN")}`
-                : (stats?.[c.key] || 0).toLocaleString("en-IN")}
-            </p>
-          </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }
@@ -589,25 +596,25 @@ function SingleBookUpload() {
         </button>
       </form>
 
-      <div className="bg-mint border border-mint-line rounded-2xl p-6 flex flex-col">
-        <h3 className="font-bold text-lg text-ink mb-4">AI Pricing Result</h3>
+      <div className="bg-mint border border-mint-line rounded-2xl p-4 sm:p-5 flex flex-col">
+        <h3 className="font-bold text-sm sm:text-base text-ink mb-3">AI Pricing Result</h3>
         {!estimate && !loading && (
-          <p className="text-sm text-muted flex-1 flex items-center justify-center text-center">
+          <p className="text-xs sm:text-sm text-muted flex-1 flex items-center justify-center text-center py-6">
             Upload photos and submit the form to see your instant estimate here.
           </p>
         )}
         {loading && (
-          <div className="flex-1 flex flex-col items-center justify-center gap-3 text-muted text-sm">
-            <div className="w-10 h-10 border-4 border-forest/20 border-t-forest rounded-full animate-spin" />
+          <div className="flex-1 flex flex-col items-center justify-center gap-2 text-muted text-xs sm:text-sm py-6">
+            <div className="w-8 h-8 border-4 border-forest/20 border-t-forest rounded-full animate-spin" />
             Scanning cover condition, corners, and binding...
           </div>
         )}
         {estimate && !loading && (
-          <div className="space-y-5">
+          <div className="space-y-3">
             <div className="text-center">
-              <p className="text-xs font-mono text-muted">Estimated Selling Price</p>
-              <p className="text-4xl font-bold text-ink">₹{estimate.priceEstimate}</p>
-              <p className="text-xs text-muted mt-1">Confidence: {estimate.confidence}%</p>
+              <p className="text-[11px] font-mono text-muted">Estimated Selling Price</p>
+              <p className="text-3xl font-bold text-ink">₹{estimate.priceEstimate}</p>
+              <p className="text-xs text-muted mt-0.5">Confidence: {estimate.confidence}%</p>
             </div>
             {estimate.verdict && (
               <div
@@ -916,73 +923,100 @@ function TrackRequests() {
     );
   }
 
+  const BooksCell = ({ books }) => (
+    <>
+      {books.map((b) => (
+        <div key={b._id} className="mb-2.5 last:mb-0">
+          <span>{b.bookName}</span>
+          <span className="text-muted font-mono text-[11px] block">Payment code: {b.trackingId}</span>
+          <span className="text-xs text-muted block">AI estimate: ₹{b.aiEstimatedPrice || 0}</span>
+
+          {b.priceApproval === "Pending" && (
+            <div className="mt-1.5 bg-amber-50 border border-amber-200 rounded-lg p-2.5 text-xs">
+              <p className="font-semibold text-ink">
+                Admin offered you ₹{b.adminOfferedPrice} instead of the AI's ₹{b.aiEstimatedPrice}
+              </p>
+              {b.adminNote && <p className="text-muted italic mt-0.5">"{b.adminNote}"</p>}
+              <div className="flex gap-2 mt-2">
+                <button
+                  onClick={() => respond(b._id, "Accept")}
+                  disabled={respondingTo === b._id}
+                  className="flex items-center gap-1 btn-brand text-white font-semibold px-2.5 py-1.5 rounded-lg disabled:opacity-50"
+                >
+                  <Check size={12} /> Accept ₹{b.adminOfferedPrice}
+                </button>
+                <button
+                  onClick={() => respond(b._id, "Reject")}
+                  disabled={respondingTo === b._id}
+                  className="flex items-center gap-1 border border-mint-line px-2.5 py-1.5 rounded-lg disabled:opacity-50"
+                >
+                  <X size={12} /> Reject
+                </button>
+              </div>
+            </div>
+          )}
+
+          {b.priceApproval === "Accepted" && (
+            <span className="text-[11px] text-forest font-semibold block mt-0.5">
+              You accepted ₹{b.finalPrice}
+            </span>
+          )}
+
+          {b.priceApproval === "Rejected" && (
+            <span className="text-[11px] text-rose block mt-0.5">
+              You rejected the ₹{b.adminOfferedPrice} offer — waiting for admin's next move
+            </span>
+          )}
+        </div>
+      ))}
+    </>
+  );
+
   return (
-    <div className="bg-white border border-mint-line rounded-2xl overflow-x-auto">
-      <table className="w-full text-sm min-w-[640px]">
-        <thead className="bg-mint text-left text-xs font-mono text-muted uppercase">
-          <tr>
-            <th className="px-5 py-3">Tracking ID</th>
-            <th className="px-5 py-3">Books</th>
-            <th className="px-5 py-3">Status</th>
-            <th className="px-5 py-3">Requested On</th>
-          </tr>
-        </thead>
-        <tbody>
-          {pickups.map((p) => (
-            <tr key={p._id} className="border-t border-mint-line">
-              <td className="px-5 py-3 font-mono text-xs text-forest font-semibold">{p.trackingId || p._id.slice(-8)}</td>
-              <td className="px-5 py-3">
-                {p.books.map((b) => (
-                  <div key={b._id} className="mb-2.5 last:mb-0">
-                    <span>{b.bookName}</span>
-                    <span className="text-muted font-mono text-[11px] block">Payment code: {b.trackingId}</span>
-                    <span className="text-xs text-muted block">AI estimate: ₹{b.aiEstimatedPrice || 0}</span>
+    <div>
+      {/* Mobile / small screens — responsive cards, no horizontal scroll */}
+      <div className="sm:hidden space-y-3">
+        {pickups.map((p) => (
+          <div key={p._id} className="bg-white border border-mint-line rounded-2xl p-4 shadow-sm">
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <span className="font-mono text-xs text-forest font-semibold">{p.trackingId || p._id.slice(-8)}</span>
+              <StatusPill status={p.status} />
+            </div>
+            <div className="text-sm">
+              <BooksCell books={p.books} />
+            </div>
+            <p className="text-[11px] text-muted mt-2 pt-2 border-t border-mint-line">
+              Requested on {new Date(p.createdAt).toLocaleDateString()}
+            </p>
+          </div>
+        ))}
+      </div>
 
-                    {b.priceApproval === "Pending" && (
-                      <div className="mt-1.5 bg-amber-50 border border-amber-200 rounded-lg p-2.5 text-xs">
-                        <p className="font-semibold text-ink">
-                          Admin offered you ₹{b.adminOfferedPrice} instead of the AI's ₹{b.aiEstimatedPrice}
-                        </p>
-                        {b.adminNote && <p className="text-muted italic mt-0.5">"{b.adminNote}"</p>}
-                        <div className="flex gap-2 mt-2">
-                          <button
-                            onClick={() => respond(b._id, "Accept")}
-                            disabled={respondingTo === b._id}
-                            className="flex items-center gap-1 btn-brand text-white font-semibold px-2.5 py-1.5 rounded-lg disabled:opacity-50"
-                          >
-                            <Check size={12} /> Accept ₹{b.adminOfferedPrice}
-                          </button>
-                          <button
-                            onClick={() => respond(b._id, "Reject")}
-                            disabled={respondingTo === b._id}
-                            className="flex items-center gap-1 border border-mint-line px-2.5 py-1.5 rounded-lg disabled:opacity-50"
-                          >
-                            <X size={12} /> Reject
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    {b.priceApproval === "Accepted" && (
-                      <span className="text-[11px] text-forest font-semibold block mt-0.5">
-                        You accepted ₹{b.finalPrice}
-                      </span>
-                    )}
-
-                    {b.priceApproval === "Rejected" && (
-                      <span className="text-[11px] text-rose block mt-0.5">
-                        You rejected the ₹{b.adminOfferedPrice} offer — waiting for admin's next move
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </td>
-              <td className="px-5 py-3"><StatusPill status={p.status} /></td>
-              <td className="px-5 py-3 text-muted">{new Date(p.createdAt).toLocaleDateString()}</td>
+      {/* Desktop / tablet — table */}
+      <div className="hidden sm:block bg-white border border-mint-line rounded-2xl overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="bg-mint text-left text-xs font-mono text-muted uppercase">
+            <tr>
+              <th className="px-5 py-3">Tracking ID</th>
+              <th className="px-5 py-3">Books</th>
+              <th className="px-5 py-3">Status</th>
+              <th className="px-5 py-3">Requested On</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {pickups.map((p) => (
+              <tr key={p._id} className="border-t border-mint-line">
+                <td className="px-5 py-3 font-mono text-xs text-forest font-semibold">{p.trackingId || p._id.slice(-8)}</td>
+                <td className="px-5 py-3">
+                  <BooksCell books={p.books} />
+                </td>
+                <td className="px-5 py-3"><StatusPill status={p.status} /></td>
+                <td className="px-5 py-3 text-muted">{new Date(p.createdAt).toLocaleDateString()}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
@@ -1172,46 +1206,78 @@ function PaymentHistory() {
           No payments yet. Completed pickups will show up here.
         </div>
       ) : (
-        <div className="bg-white border border-mint-line rounded-2xl overflow-x-auto">
-          <table className="w-full text-sm min-w-[640px]">
-            <thead className="bg-mint text-left text-xs font-mono text-muted uppercase">
-              <tr>
-                <th className="px-5 py-3">Books</th>
-                <th className="px-5 py-3">Tracking Code</th>
-                <th className="px-5 py-3">Amount</th>
-                <th className="px-5 py-3">Paid Via</th>
-                <th className="px-5 py-3">Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pickups.map((p) => (
-                <tr key={p._id} className="border-t border-mint-line">
-                  <td className="px-5 py-3">{p.books.map((b) => b.bookName).join(", ")}</td>
-                  <td className="px-5 py-3 font-mono text-xs text-forest">
-                    {p.books.map((b) => b.trackingId).join(", ")}
-                  </td>
-                  <td className="px-5 py-3 font-semibold text-forest">
-                    ₹{p.books.reduce((sum, b) => sum + (b.finalPrice || 0), 0)}
-                  </td>
-                  <td className="px-5 py-3">
-                    <span className="text-xs text-ink">{p.paymentMode || "—"}</span>
-                    {p.paymentMode === "Stripe" && p.stripeReceiptUrl && (
-                      <a
-                        href={p.stripeReceiptUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block text-[11px] text-forest hover:underline mt-0.5"
-                      >
-                        View receipt
-                      </a>
-                    )}
-                  </td>
-                  <td className="px-5 py-3 text-muted">{new Date(p.createdAt).toLocaleDateString()}</td>
+        <>
+          {/* Mobile — cards, no horizontal scroll */}
+          <div className="sm:hidden space-y-3">
+            {pickups.map((p) => (
+              <div key={p._id} className="bg-white border border-mint-line rounded-2xl p-4 shadow-sm text-sm">
+                <p className="font-semibold text-ink">{p.books.map((b) => b.bookName).join(", ")}</p>
+                <p className="font-mono text-[11px] text-forest mt-0.5">
+                  {p.books.map((b) => b.trackingId).join(", ")}
+                </p>
+                <div className="flex items-center justify-between mt-2">
+                  <span className="font-bold text-forest">₹{p.books.reduce((sum, b) => sum + (b.finalPrice || 0), 0)}</span>
+                  <span className="text-xs text-ink">{p.paymentMode || "—"}</span>
+                </div>
+                {p.paymentMode === "Stripe" && p.stripeReceiptUrl && (
+                  <a
+                    href={p.stripeReceiptUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block text-[11px] text-forest hover:underline mt-1"
+                  >
+                    View receipt
+                  </a>
+                )}
+                <p className="text-[11px] text-muted mt-2 pt-2 border-t border-mint-line">
+                  {new Date(p.createdAt).toLocaleDateString()}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop — table */}
+          <div className="hidden sm:block bg-white border border-mint-line rounded-2xl overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-mint text-left text-xs font-mono text-muted uppercase">
+                <tr>
+                  <th className="px-5 py-3">Books</th>
+                  <th className="px-5 py-3">Tracking Code</th>
+                  <th className="px-5 py-3">Amount</th>
+                  <th className="px-5 py-3">Paid Via</th>
+                  <th className="px-5 py-3">Date</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {pickups.map((p) => (
+                  <tr key={p._id} className="border-t border-mint-line">
+                    <td className="px-5 py-3">{p.books.map((b) => b.bookName).join(", ")}</td>
+                    <td className="px-5 py-3 font-mono text-xs text-forest">
+                      {p.books.map((b) => b.trackingId).join(", ")}
+                    </td>
+                    <td className="px-5 py-3 font-semibold text-forest">
+                      ₹{p.books.reduce((sum, b) => sum + (b.finalPrice || 0), 0)}
+                    </td>
+                    <td className="px-5 py-3">
+                      <span className="text-xs text-ink">{p.paymentMode || "—"}</span>
+                      {p.paymentMode === "Stripe" && p.stripeReceiptUrl && (
+                        <a
+                          href={p.stripeReceiptUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block text-[11px] text-forest hover:underline mt-0.5"
+                        >
+                          View receipt
+                        </a>
+                      )}
+                    </td>
+                    <td className="px-5 py-3 text-muted">{new Date(p.createdAt).toLocaleDateString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </div>
   );

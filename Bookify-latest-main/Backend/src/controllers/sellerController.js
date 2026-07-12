@@ -86,10 +86,15 @@ exports.getSellerDashboardStats = async (req, res) => {
     );
 
     const paidStatuses = ["Paid", "Completed"];
+    const approvedStatuses = ["Approved", "Collected", "Paid", "Completed"];
+    const pendingStatuses = ["Requested", "Assigned", "UnderVerification"];
+
     let completedOrders = 0;
     let pendingOrders = 0;
     let revenue = 0;
     let booksSold = 0;
+    let approvedBooks = 0;
+    let pendingBooks = 0;
 
     for (const book of books) {
       if (paidStatuses.includes(book.status)) {
@@ -99,11 +104,26 @@ exports.getSellerDashboardStats = async (req, res) => {
       } else {
         pendingOrders += 1;
       }
+
+      if (approvedStatuses.includes(book.status)) approvedBooks += 1;
+      if (pendingStatuses.includes(book.status)) pendingBooks += 1;
     }
 
     return res.status(200).json({
       success: true,
-      stats: { completedOrders, pendingOrders, revenue, booksSold },
+      stats: {
+        // Existing keys (kept for backward compatibility with current UI)
+        completedOrders,
+        pendingOrders,
+        revenue,
+        booksSold,
+        // Overview-card keys
+        totalBooks: books.length,
+        pendingBooks,
+        approvedBooks,
+        soldBooks: booksSold,
+        earnings: revenue,
+      },
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });

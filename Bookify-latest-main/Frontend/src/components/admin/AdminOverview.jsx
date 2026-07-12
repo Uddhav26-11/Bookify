@@ -7,11 +7,14 @@ import {
   CheckCircle,
   IndianRupee,
   Wallet,
+  TrendingUp,
 } from "lucide-react";
 import {
   ResponsiveContainer,
   BarChart,
   Bar,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -36,6 +39,9 @@ export default function AdminOverview({ stats, analytics, pickups, users = [], o
   // ---- Graph 2: Books Sold Analytics (real data from completed orders) ----
   const salesData = buildBooksSoldData(analytics);
 
+  // ---- Graph 3: Average Profit (customer price - admin purchase price) ----
+  const profitData = analytics?.profitTrend || [];
+
   return (
     <div className="space-y-8">
       <div>
@@ -48,7 +54,9 @@ export default function AdminOverview({ stats, analytics, pickups, users = [], o
           <StatCard icon={IndianRupee} label="Total Revenue" value={stats.revenue} isCurrency onClick={() => onNavigate("payments")} />
           <StatCard icon={CheckCircle} label="Completed Orders" value={stats.completedOrders} onClick={() => onNavigate("payments")} />
           <StatCard icon={Clock} label="Pending Requests" value={pendingRequests} onClick={() => onNavigate("pickups")} />
-          <StatCard icon={Wallet} label="Avg. Book Purchase Price" value={analytics?.avgSellingPrice} isCurrency growth={analytics?.momChange} />
+          <StatCard icon={Wallet} label="Purchase Cost" value={stats.purchaseCost ?? analytics?.purchaseCost} isCurrency onClick={() => onNavigate("payments")} />
+          <StatCard icon={TrendingUp} label="Total Profit" value={stats.totalProfit ?? analytics?.totalProfit} isCurrency onClick={() => onNavigate("payments")} />
+          <StatCard icon={TrendingUp} label="Average Profit" value={stats.avgProfit ?? analytics?.avgProfit} isCurrency />
         </div>
       </div>
 
@@ -129,7 +137,66 @@ export default function AdminOverview({ stats, analytics, pickups, users = [], o
           )}
         </ChartCard>
       </div>
+
+      <ChartCard
+        title="Average Profit"
+        subtitle="Customer purchase price − admin purchase price · monthly trend"
+      >
+        {profitData.length ? (
+          <>
+            <div className="grid grid-cols-3 gap-3 mb-4">
+              <MiniStat label="Total Profit" value={`₹${(analytics?.totalProfit || 0).toLocaleString("en-IN")}`} />
+              <MiniStat label="Average Profit / Sale" value={`₹${(analytics?.avgProfit || 0).toLocaleString("en-IN")}`} />
+              <MiniStat label="Purchase Cost" value={`₹${(analytics?.purchaseCost || 0).toLocaleString("en-IN")}`} />
+            </div>
+            <ResponsiveContainer width="100%" height={260}>
+              <LineChart data={profitData} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#D3EEDC" vertical={false} />
+                <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#667C72" }} axisLine={{ stroke: "#D3EEDC" }} tickLine={false} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: "#667C72" }} axisLine={false} tickLine={false} />
+                <Tooltip content={<ProfitTooltip />} cursor={{ stroke: GRAD_MID, strokeWidth: 1, strokeDasharray: "4 4" }} />
+                <Line
+                  type="monotone"
+                  dataKey="profit"
+                  name="Profit"
+                  stroke={GRAD_FROM}
+                  strokeWidth={2.5}
+                  dot={{ r: 4, fill: GRAD_MID, strokeWidth: 0 }}
+                  activeDot={{ r: 6 }}
+                  animationDuration={900}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </>
+        ) : (
+          <EmptyChart />
+        )}
+      </ChartCard>
     </div>
+  );
+}
+
+function MiniStat({ label, value }) {
+  return (
+    <div className="bg-white/70 border border-mint-line rounded-xl px-3 py-2.5">
+      <p className="text-[10px] text-muted font-mono truncate">{label}</p>
+      <p className="text-sm sm:text-base font-bold text-ink truncate">{value}</p>
+    </div>
+  );
+}
+
+function ProfitTooltip({ active, payload }) {
+  if (!active || !payload?.length) return null;
+  const d = payload[0].payload;
+  return (
+    <TooltipShell
+      title={d.month}
+      rows={[
+        { label: "Total Profit", value: `₹${d.profit.toLocaleString("en-IN")}` },
+        { label: "Avg. Profit / Sale", value: `₹${d.avgProfit.toLocaleString("en-IN")}` },
+        { label: "Sales Count", value: d.salesCount.toLocaleString("en-IN") },
+      ]}
+    />
   );
 }
 

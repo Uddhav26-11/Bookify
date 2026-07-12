@@ -24,6 +24,37 @@ exports.getDashboardStats = async (req, res) => {
       { $group: { _id: null, total: { $sum: "$totalAmount" } } },
     ]);
 
+    // ---- Purchase Cost & Profit (built from REAL admin purchase price) ----
+    // "Purchase cost" here always means Book.finalPrice — the amount the
+    // admin actually paid the seller after approval/negotiation. It is
+    // NEVER the seller's requested price (sellerProposedPrice) and never
+    // the customer-facing selling price.
+    const paidOrders = await Order.find({
+      paymentStatus: "Paid",
+      orderStatus: { $ne: "Cancelled" },
+    })
+      .select("bill.items")
+      .populate("bill.items.book", "finalPrice sellerProposedPrice aiEstimatedPrice");
+
+    let purchaseCost = 0;
+    let totalProfit = 0;
+    let profitableSales = 0;
+
+    for (const order of paidOrders) {
+      for (const item of order.bill?.items || []) {
+        const book = item.book;
+        if (!book) continue;
+        // Real admin purchase price only — no fallback to seller's ask.
+        const adminPurchasePrice = book.finalPrice || 0;
+        const customerPrice = item.price || 0;
+        purchaseCost += adminPurchasePrice;
+        totalProfit += customerPrice - adminPurchasePrice;
+        profitableSales += 1;
+      }
+    }
+
+    const avgProfit = profitableSales > 0 ? Math.round((totalProfit / profitableSales) * 100) / 100 : 0;
+
     return res.status(200).json({
       success: true,
       stats: {
@@ -33,6 +64,9 @@ exports.getDashboardStats = async (req, res) => {
         pendingRequests,
         completedOrders,
         revenue: revenueAgg[0]?.total || 0,
+        purchaseCost: Math.round(purchaseCost),
+        totalProfit: Math.round(totalProfit),
+        avgProfit,
       },
     });
   } catch (error) {
@@ -94,6 +128,59 @@ exports.getAnalytics = async (req, res) => {
     const activeSellers = await User.countDocuments({ role: "seller" });
     const activeCustomers = await User.countDocuments({ role: "customer" });
 
+    // ---- Profit trend (Customer Purchase Price - Admin Purchase Price) ----
+    // Always uses Book.finalPrice (what admin actually paid the seller),
+    // never sellerProposedPrice/aiEstimatedPrice, per each sold item.
+    const paidOrdersForProfit = await Order.find({
+      paymentStatus: "Paid",
+      orderStatus: { $ne: "Cancelled" },
+    })
+      .select("bill.items createdAt")
+      .populate("bill.items.book", "finalPrice");
+
+    const profitByMonth = {};
+    let totalProfit = 0;
+    let totalPurchaseCost = 0;
+    let profitableSales = 0;
+
+    for (const order of paidOrdersForProfit) {
+      const d = new Date(order.createdAt);
+      const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
+      if (!profitByMonth[key]) {
+        profitByMonth[key] = {
+          year: d.getFullYear(),
+          month: d.getMonth() + 1,
+          profit: 0,
+          count: 0,
+        };
+      }
+      for (const item of order.bill?.items || []) {
+        const book = item.book;
+        if (!book) continue;
+        const adminPurchasePrice = book.finalPrice || 0;
+        const customerPrice = item.price || 0;
+        const profit = customerPrice - adminPurchasePrice;
+
+        profitByMonth[key].profit += profit;
+        profitByMonth[key].count += 1;
+        totalProfit += profit;
+        totalPurchaseCost += adminPurchasePrice;
+        profitableSales += 1;
+      }
+    }
+
+    const profitTrend = Object.values(profitByMonth)
+      .sort((a, b) => (a.year - b.year) || (a.month - b.month))
+      .slice(-12)
+      .map((m) => ({
+        month: `${MONTH_NAMES[m.month - 1]} ${m.year}`,
+        profit: Math.round(m.profit),
+        avgProfit: m.count > 0 ? Math.round((m.profit / m.count) * 100) / 100 : 0,
+        salesCount: m.count,
+      }));
+
+    const avgProfit = profitableSales > 0 ? Math.round((totalProfit / profitableSales) * 100) / 100 : 0;
+
     return res.status(200).json({
       success: true,
       analytics: {
@@ -106,6 +193,11 @@ exports.getAnalytics = async (req, res) => {
         activeCustomers,
         salesTrend,
         avgPriceTrend,
+        // Profit analytics — always Customer Purchase Price - Admin Purchase Price
+        totalProfit: Math.round(totalProfit),
+        avgProfit,
+        purchaseCost: Math.round(totalPurchaseCost),
+        profitTrend,
       },
     });
   } catch (error) {
