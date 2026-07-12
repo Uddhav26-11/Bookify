@@ -79,6 +79,15 @@ body { background: var(--color-paper); color: var(--color-ink); font-family: var
   .grade-scan::after { animation: none; display: none; }
 }
 
+/* Hide scrollbars on horizontally-scrollable tab/pill rows (mobile nav) */
+.no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 /* Hero redesign animations */
 @keyframes fade-up {
   from { opacity: 0; transform: translateY(18px); }

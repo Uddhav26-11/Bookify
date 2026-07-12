@@ -1,11 +1,247 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
-import { Upload, Sparkles, Check, X, Plus, Trash2, Landmark, CheckCircle, IndianRupee, BookOpen, Clock } from "lucide-react";
+import {
+  Upload, Sparkles, Check, X, Plus, Trash2, Landmark, CheckCircle, IndianRupee,
+  BookOpen, Clock, ChevronDown, GraduationCap, School, Award, Library, Search,
+} from "lucide-react";
 import StatusPill from "../components/StatusPill";
 import { getAIEstimate } from "../data/aiPricing";
 import api from "../api/axios";
 
 const TABS = ["Upload Book", "Track Requests", "Payment History", "Bank Details"];
+
+/* ------------------------------------------------------------------ */
+/* Shared option lists for the category-driven upload flow            */
+/* ------------------------------------------------------------------ */
+const CATEGORIES = [
+  { id: "school", label: "School Books", icon: School },
+  { id: "college", label: "College Books", icon: GraduationCap },
+  { id: "competitive", label: "Competitive Exam Books", icon: Award },
+  { id: "other", label: "Other Books", icon: Library },
+];
+
+const BOARD_OPTIONS = ["CBSE", "ICSE", "State Board", "Other"];
+const CLASS_OPTIONS = Array.from({ length: 12 }, (_, i) => String(i + 1));
+const SCHOOL_SUBJECTS = ["Mathematics", "Science", "English", "Hindi", "Social Science", "Physics", "Chemistry", "Biology", "Computer Science", "Sanskrit", "Other"];
+
+const COURSE_OPTIONS = ["B.Tech", "BCA", "BBA", "B.Com", "B.Sc", "B.A.", "MBA", "M.Tech", "M.Sc", "M.Com", "Other"];
+const YEAR_OPTIONS = ["1st", "2nd", "3rd", "4th"];
+const SEMESTER_OPTIONS = ["1", "2", "3", "4", "5", "6", "7", "8"];
+const COLLEGE_SUBJECTS = ["Mathematics", "Physics", "Chemistry", "Data Structures", "Programming", "Economics", "Accountancy", "Marketing", "English", "Electronics", "Mechanics", "Other"];
+
+const EXAM_TYPES = ["UPSC", "SSC", "JEE", "NEET", "GATE", "CAT", "Banking", "Railway", "NDA", "CUET", "Other"];
+
+const OTHER_CATEGORIES = ["Fiction", "Non-fiction", "Self-help", "Children's Books", "Comics", "Biography", "Other"];
+
+function emptyCategoryForm() {
+  return {
+    category: "",
+    board: "", cls: "", subject: "", subjectCustom: "",
+    course: "", courseCustom: "", year: "", semester: "", collegeSubject: "", collegeSubjectCustom: "",
+    examType: "", examTypeCustom: "",
+    otherCategory: "", otherCategoryCustom: "",
+    bookName: "", author: "", publication: "", condition: "Good",
+  };
+}
+
+// Resolves the category-specific selections down to the backend's flat
+// board / class / subject fields, without touching any backend code.
+function resolveCategoryFields(f) {
+  if (f.category === "school") {
+    return { board: f.board, cls: f.cls, subject: f.subject === "Other" ? f.subjectCustom : f.subject };
+  }
+  if (f.category === "college") {
+    const course = f.course === "Other" ? f.courseCustom : f.course;
+    const subject = f.collegeSubject === "Other" ? f.collegeSubjectCustom : f.collegeSubject;
+    return { board: "College", cls: `${course}${f.year ? ` • Year ${f.year}` : ""}${f.semester ? ` • Sem ${f.semester}` : ""}`, subject };
+  }
+  if (f.category === "competitive") {
+    const exam = f.examType === "Other" ? f.examTypeCustom : f.examType;
+    return { board: "Competitive Exam", cls: exam, subject: "" };
+  }
+  if (f.category === "other") {
+    const cat = f.otherCategory === "Other" ? f.otherCategoryCustom : f.otherCategory;
+    return { board: "Other", cls: cat, subject: "" };
+  }
+  return { board: "", cls: "", subject: "" };
+}
+
+function categoryComplete(f) {
+  if (!f.category) return false;
+  if (f.category === "school") return !!(f.board && f.cls && f.subject && (f.subject !== "Other" || f.subjectCustom));
+  if (f.category === "college") return !!(f.course && (f.course !== "Other" || f.courseCustom) && f.year && f.semester && f.collegeSubject && (f.collegeSubject !== "Other" || f.collegeSubjectCustom));
+  if (f.category === "competitive") return !!(f.examType && (f.examType !== "Other" || f.examTypeCustom));
+  if (f.category === "other") return !!(f.otherCategory && (f.otherCategory !== "Other" || f.otherCategoryCustom));
+  return false;
+}
+
+/* ------------------------------------------------------------------ */
+/* Category card selector — replaces free-text category entry          */
+/* ------------------------------------------------------------------ */
+function CategorySelector({ value, onChange }) {
+  return (
+    <div>
+      <label className="text-xs font-medium text-muted block mb-2">Select Book Category</label>
+      <div className="grid grid-cols-2 gap-3">
+        {CATEGORIES.map((c) => {
+          const active = value === c.id;
+          return (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => onChange(c.id)}
+              className={`flex flex-col items-center justify-center gap-2 rounded-2xl border-2 px-3 py-5 text-center transition min-h-[96px] ${
+                active
+                  ? "border-forest bg-mint shadow-sm"
+                  : "border-mint-line bg-white hover:border-forest/40 hover:bg-mint/40"
+              }`}
+            >
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${active ? "btn-brand text-white" : "bg-mint text-forest"}`}>
+                <c.icon size={18} />
+              </div>
+              <span className={`text-xs font-semibold leading-tight ${active ? "text-forest" : "text-ink"}`}>{c.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Reusable expandable dropdown ("beautiful accordion" selector)       */
+/* ------------------------------------------------------------------ */
+function SelectField({ label, value, onChange, options, placeholder = "Select an option", searchable = false }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const ref = useRef(null);
+
+  useEffect(() => {
+    function onDocClick(e) {
+      if (ref.current && !ref.current.contains(e.target)) {
+        setOpen(false);
+        setQuery("");
+      }
+    }
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, []);
+
+  const filtered = searchable && query ? options.filter((o) => o.toLowerCase().includes(query.toLowerCase())) : options;
+
+  return (
+    <div ref={ref} className="relative">
+      {label && <label className="text-xs font-medium text-muted block mb-1">{label}</label>}
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className={`w-full flex items-center justify-between gap-2 rounded-lg border px-4 py-2.5 text-sm text-left bg-white transition ${
+          open ? "border-forest ring-2 ring-forest/20" : "border-mint-line"
+        }`}
+      >
+        <span className={value ? "text-ink" : "text-muted"}>{value || placeholder}</span>
+        <ChevronDown size={16} className={`text-muted shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      <div className={`grid transition-all duration-200 ease-out ${open ? "grid-rows-[1fr] opacity-100 mt-2" : "grid-rows-[0fr] opacity-0"}`}>
+        <div className="overflow-hidden">
+          <div className="border border-mint-line rounded-xl bg-white shadow-lg max-h-60 overflow-y-auto">
+            {searchable && (
+              <div className="p-2 sticky top-0 bg-white border-b border-mint-line flex items-center gap-2">
+                <Search size={14} className="text-muted ml-1.5 shrink-0" />
+                <input
+                  autoFocus
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search..."
+                  className="w-full px-1.5 py-1.5 text-sm focus:outline-none"
+                />
+              </div>
+            )}
+            {filtered.length === 0 && <p className="px-4 py-3 text-sm text-muted">No matches found</p>}
+            {filtered.map((opt) => (
+              <button
+                key={opt}
+                type="button"
+                onClick={() => {
+                  onChange(opt);
+                  setOpen(false);
+                  setQuery("");
+                }}
+                className={`w-full text-left px-4 py-2.5 text-sm transition hover:bg-mint ${
+                  value === opt ? "bg-mint text-forest font-semibold" : "text-ink"
+                }`}
+              >
+                {opt}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// The full block of category-dependent dropdowns (Board/Class/Subject,
+// Course/Year/Semester/Subject, Exam Type, or Other Category) followed by
+// Book Name / Author / Publication. Shared by the single and bulk forms.
+function CategoryFormFields({ f, set }) {
+  return (
+    <div className="space-y-4">
+      <CategorySelector value={f.category} onChange={(v) => set({ category: v })} />
+
+      {f.category === "school" && (
+        <div className="grid sm:grid-cols-2 gap-4 animate-[fadeIn_0.2s_ease-out]">
+          <SelectField label="Board" value={f.board} onChange={(v) => set({ board: v })} options={BOARD_OPTIONS} placeholder="Select board" />
+          <SelectField label="Class" value={f.cls} onChange={(v) => set({ cls: v })} options={CLASS_OPTIONS} placeholder="Select class" searchable />
+          <div className="sm:col-span-2">
+            <SelectField label="Subject" value={f.subject} onChange={(v) => set({ subject: v, subjectCustom: v === "Other" ? f.subjectCustom : "" })} options={SCHOOL_SUBJECTS} placeholder="Select subject" searchable />
+          </div>
+          {f.subject === "Other" && <div className="sm:col-span-2"><Field label="Specify Subject" value={f.subjectCustom} onChange={(v) => set({ subjectCustom: v })} /></div>}
+        </div>
+      )}
+
+      {f.category === "college" && (
+        <div className="grid sm:grid-cols-2 gap-4 animate-[fadeIn_0.2s_ease-out]">
+          <div className="sm:col-span-2">
+            <SelectField label="Course" value={f.course} onChange={(v) => set({ course: v, courseCustom: v === "Other" ? f.courseCustom : "" })} options={COURSE_OPTIONS} placeholder="Select course" searchable />
+          </div>
+          {f.course === "Other" && <div className="sm:col-span-2"><Field label="Specify Course" value={f.courseCustom} onChange={(v) => set({ courseCustom: v })} /></div>}
+          <SelectField label="Year" value={f.year} onChange={(v) => set({ year: v })} options={YEAR_OPTIONS} placeholder="Select year" />
+          <SelectField label="Semester" value={f.semester} onChange={(v) => set({ semester: v })} options={SEMESTER_OPTIONS} placeholder="Select semester" searchable />
+          <div className="sm:col-span-2">
+            <SelectField label="Subject" value={f.collegeSubject} onChange={(v) => set({ collegeSubject: v, collegeSubjectCustom: v === "Other" ? f.collegeSubjectCustom : "" })} options={COLLEGE_SUBJECTS} placeholder="Select subject" searchable />
+          </div>
+          {f.collegeSubject === "Other" && <div className="sm:col-span-2"><Field label="Specify Subject" value={f.collegeSubjectCustom} onChange={(v) => set({ collegeSubjectCustom: v })} /></div>}
+        </div>
+      )}
+
+      {f.category === "competitive" && (
+        <div className="space-y-4 animate-[fadeIn_0.2s_ease-out]">
+          <SelectField label="Exam Type" value={f.examType} onChange={(v) => set({ examType: v, examTypeCustom: v === "Other" ? f.examTypeCustom : "" })} options={EXAM_TYPES} placeholder="Select exam type" searchable />
+          {f.examType === "Other" && <Field label="Specify Exam" value={f.examTypeCustom} onChange={(v) => set({ examTypeCustom: v })} />}
+        </div>
+      )}
+
+      {f.category === "other" && (
+        <div className="space-y-4 animate-[fadeIn_0.2s_ease-out]">
+          <SelectField label="Category" value={f.otherCategory} onChange={(v) => set({ otherCategory: v, otherCategoryCustom: v === "Other" ? f.otherCategoryCustom : "" })} options={OTHER_CATEGORIES} placeholder="Select category" searchable />
+          {f.otherCategory === "Other" && <Field label="Specify Category" value={f.otherCategoryCustom} onChange={(v) => set({ otherCategoryCustom: v })} />}
+        </div>
+      )}
+
+      {f.category && categoryComplete(f) && (
+        <div className="grid sm:grid-cols-2 gap-4 pt-1 animate-[fadeIn_0.2s_ease-out] border-t border-mint-line mt-1">
+          <div className="sm:col-span-2 pt-3">
+            <Field label="Book Name" value={f.bookName} onChange={(v) => set({ bookName: v })} />
+          </div>
+          <Field label="Author" value={f.author} onChange={(v) => set({ author: v })} />
+          <Field label="Publication" value={f.publication} onChange={(v) => set({ publication: v })} />
+        </div>
+      )}
+    </div>
+  );
+}
 
 const STAT_CARDS = [
   { label: "Books Paid", key: "completedOrders", icon: CheckCircle },
@@ -38,15 +274,15 @@ function SellerStats() {
   }, []);
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
       {STAT_CARDS.map((c) => (
-        <div key={c.key} className="bg-white border border-mint-line rounded-2xl p-5 flex items-center gap-4">
-          <div className="w-11 h-11 rounded-xl bg-mint flex items-center justify-center text-forest shrink-0">
-            <c.icon size={20} />
+        <div key={c.key} className="bg-white border border-mint-line rounded-2xl p-3.5 sm:p-5 flex items-center gap-3 sm:gap-4">
+          <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-mint flex items-center justify-center text-forest shrink-0">
+            <c.icon size={18} />
           </div>
-          <div>
-            <p className="text-xs text-muted font-mono">{c.label}</p>
-            <p className="text-2xl font-semibold text-ink">
+          <div className="min-w-0">
+            <p className="text-[10px] sm:text-xs text-muted font-mono truncate">{c.label}</p>
+            <p className="text-lg sm:text-2xl font-semibold text-ink truncate">
               {loading
                 ? "…"
                 : c.isCurrency
@@ -64,20 +300,20 @@ export default function SellerDashboard() {
   const [tab, setTab] = useState("Upload Book");
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-10">
-      <h1 className="text-3xl font-bold text-ink">Seller Dashboard</h1>
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+      <h1 className="text-2xl sm:text-3xl font-bold text-ink">Seller Dashboard</h1>
       <p className="text-muted text-sm mt-1">Upload books, track pickup requests, and view your payments.</p>
 
       <div className="mt-6">
         <SellerStats />
       </div>
 
-      <div className="flex gap-2 mt-2 border-b border-mint-line">
+      <div className="flex gap-1 sm:gap-2 mt-2 border-b border-mint-line overflow-x-auto no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
         {TABS.map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`px-4 py-2.5 text-sm font-semibold border-b-2 -mb-px transition ${
+            className={`px-3 sm:px-4 py-2.5 text-sm font-semibold border-b-2 -mb-px transition whitespace-nowrap shrink-0 ${
               tab === t ? "border-forest text-forest" : "border-transparent text-muted hover:text-ink"
             }`}
           >
@@ -86,7 +322,7 @@ export default function SellerDashboard() {
         ))}
       </div>
 
-      <div className="mt-8">
+      <div className="mt-6 sm:mt-8">
         {tab === "Upload Book" && <UploadBook />}
         {tab === "Track Requests" && <TrackRequests />}
         {tab === "Payment History" && <PaymentHistory />}
@@ -101,10 +337,10 @@ function UploadBook() {
 
   return (
     <div>
-      <div className="flex gap-2 mb-6">
+      <div className="flex gap-2 mb-6 overflow-x-auto no-scrollbar">
         <button
           onClick={() => setMode("single")}
-          className={`px-4 py-2 rounded-full text-sm font-semibold transition ${
+          className={`px-4 py-2 rounded-full text-sm font-semibold transition whitespace-nowrap shrink-0 ${
             mode === "single" ? "btn-brand text-white" : "bg-white border border-mint-line text-ink"
           }`}
         >
@@ -112,7 +348,7 @@ function UploadBook() {
         </button>
         <button
           onClick={() => setMode("bulk")}
-          className={`px-4 py-2 rounded-full text-sm font-semibold transition ${
+          className={`px-4 py-2 rounded-full text-sm font-semibold transition whitespace-nowrap shrink-0 ${
             mode === "bulk" ? "btn-brand text-white" : "bg-white border border-mint-line text-ink"
           }`}
         >
@@ -126,7 +362,9 @@ function UploadBook() {
 }
 
 function SingleBookUpload() {
-  const [form, setForm] = useState({ name: "", cls: "", board: "", subject: "", author: "", publication: "", condition: "Good", sellerPrice: "" });
+  const [cat, setCat] = useState(emptyCategoryForm());
+  const setCatFields = (patch) => setCat((prev) => ({ ...prev, ...patch }));
+  const [sellerPrice, setSellerPrice] = useState("");
   const [files, setFiles] = useState([]);
   const [previews, setPreviews] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -166,6 +404,14 @@ function SingleBookUpload() {
     e.preventDefault();
     setError("");
 
+    if (!categoryComplete(cat)) {
+      setError("Please complete the category details above.");
+      return;
+    }
+    if (!cat.bookName) {
+      setError("Please enter the book name.");
+      return;
+    }
     if (files.length !== 4) {
       setError("Please upload exactly 4 photos (cover, back, spine, and any damage).");
       return;
@@ -175,7 +421,9 @@ function SingleBookUpload() {
     setEstimate(null);
     setDecision(null);
     try {
-      const result = await getAIEstimate({ form, files, sellerPrice: form.sellerPrice });
+      const resolved = resolveCategoryFields(cat);
+      const form = { name: cat.bookName, cls: resolved.cls, board: resolved.board, subject: resolved.subject, author: cat.author, publication: cat.publication, condition: cat.condition };
+      const result = await getAIEstimate({ form, files, sellerPrice });
       setEstimate(result);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to get an AI price estimate. Please try again.");
@@ -188,17 +436,18 @@ function SingleBookUpload() {
     setSubmitting(true);
     setError("");
     try {
+      const resolved = resolveCategoryFields(cat);
       const fd = new FormData();
-      fd.append("bookName", form.name);
-      fd.append("class", form.cls);
-      fd.append("board", form.board);
-      fd.append("subject", form.subject);
-      fd.append("author", form.author);
-      fd.append("publication", form.publication);
-      fd.append("condition", form.condition);
+      fd.append("bookName", cat.bookName);
+      fd.append("class", resolved.cls);
+      fd.append("board", resolved.board);
+      fd.append("subject", resolved.subject);
+      fd.append("author", cat.author);
+      fd.append("publication", cat.publication);
+      fd.append("condition", cat.condition);
       fd.append("aiEstimatedPrice", estimate.priceEstimate);
       fd.append("confidenceScore", estimate.confidence);
-      if (form.sellerPrice) fd.append("sellerProposedPrice", form.sellerPrice);
+      if (sellerPrice) fd.append("sellerProposedPrice", sellerPrice);
       // Photos were already analyzed and uploaded to Cloudinary during the
       // AI estimate step — reuse those URLs instead of re-uploading.
       fd.append("imageUrls", JSON.stringify(estimate.imageUrls));
@@ -216,22 +465,16 @@ function SingleBookUpload() {
   };
 
   return (
-    <div className="grid lg:grid-cols-2 gap-8">
-      <form onSubmit={submit} className="bg-white border border-mint-line rounded-2xl p-6 space-y-4">
-        <div className="grid sm:grid-cols-2 gap-4">
-          <Field label="Book Name" value={form.name} onChange={(v) => setForm({ ...form, name: v })} />
-          <Field label="Class" value={form.cls} onChange={(v) => setForm({ ...form, cls: v })} />
-          <Field label="Board" value={form.board} onChange={(v) => setForm({ ...form, board: v })} />
-          <Field label="Subject" value={form.subject} onChange={(v) => setForm({ ...form, subject: v })} />
-          <Field label="Author" value={form.author} onChange={(v) => setForm({ ...form, author: v })} />
-          <Field label="Publication" value={form.publication} onChange={(v) => setForm({ ...form, publication: v })} />
-        </div>
+    <div className="grid lg:grid-cols-2 gap-6 lg:gap-8">
+      <form onSubmit={submit} className="bg-white border border-mint-line rounded-2xl p-4 sm:p-6 space-y-5">
+        <CategoryFormFields f={cat} set={setCatFields} />
+
         <div className="grid sm:grid-cols-2 gap-4">
           <div>
             <label className="text-xs font-medium text-muted block mb-1">Condition</label>
             <select
-              value={form.condition}
-              onChange={(e) => setForm({ ...form, condition: e.target.value })}
+              value={cat.condition}
+              onChange={(e) => setCatFields({ condition: e.target.value })}
               className="w-full border border-mint-line rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-forest"
             >
               {["Poor", "Fair", "Good", "Excellent"].map((c) => <option key={c}>{c}</option>)}
@@ -243,17 +486,17 @@ function SingleBookUpload() {
               type="number"
               min="0"
               placeholder="e.g. 150"
-              value={form.sellerPrice}
-              onChange={(e) => setForm({ ...form, sellerPrice: e.target.value })}
+              value={sellerPrice}
+              onChange={(e) => setSellerPrice(e.target.value)}
               className="w-full border border-mint-line rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-forest"
             />
           </div>
         </div>
         <div>
           <label className="text-xs font-medium text-muted block mb-1">Photos — exactly 4 required</label>
-          <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-mint-line rounded-xl py-8 cursor-pointer hover:bg-mint transition">
+          <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-mint-line rounded-xl py-8 cursor-pointer hover:bg-mint transition active:scale-[0.99]">
             <Upload size={20} className="text-forest" />
-            <span className="text-sm text-muted">Upload cover, back, spine, and any damage (4 photos, one at a time or together)</span>
+            <span className="text-sm text-muted text-center px-4">Upload cover, back, spine, and any damage (4 photos, one at a time or together)</span>
             <input type="file" accept="image/*" multiple onChange={onFile} className="hidden" />
           </label>
           <p className={`text-xs mt-2 font-medium ${files.length === 4 ? "text-forest" : "text-muted"}`}>
@@ -281,7 +524,7 @@ function SingleBookUpload() {
         <button
           type="submit"
           disabled={loading || files.length !== 4}
-          className="w-full btn-brand text-white font-semibold py-2.5 rounded-lg transition disabled:opacity-40 flex items-center justify-center gap-2"
+          className="w-full btn-brand text-white font-semibold py-3 sm:py-2.5 rounded-lg transition disabled:opacity-40 flex items-center justify-center gap-2 sticky bottom-3 sm:static shadow-lg sm:shadow-none"
         >
           <Sparkles size={16} /> {loading ? "Analyzing photos..." : "Get AI Price Estimate"}
         </button>
@@ -357,14 +600,19 @@ function SingleBookUpload() {
 }
 
 function BulkBookUpload() {
-  const emptyBook = () => ({ bookName: "", class: "", board: "", subject: "", author: "", publication: "", condition: "Good", files: [], previews: [] });
+  const emptyBook = () => ({ ...emptyCategoryForm(), files: [], previews: [] });
   const [books, setBooks] = useState([emptyBook()]);
+  const [openIndex, setOpenIndex] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
 
   const updateBook = (index, key, value) => {
     setBooks((prev) => prev.map((b, i) => (i === index ? { ...b, [key]: value } : b)));
+  };
+
+  const patchBook = (index, patch) => {
+    setBooks((prev) => prev.map((b, i) => (i === index ? { ...b, ...patch } : b)));
   };
 
   const onFile = (index, e) => {
@@ -394,25 +642,34 @@ function BulkBookUpload() {
     );
   };
 
-  const addBook = () => setBooks((prev) => [...prev, emptyBook()]);
+  const addBook = () => setBooks((prev) => { setOpenIndex(prev.length); return [...prev, emptyBook()]; });
   const removeBook = (index) => setBooks((prev) => prev.filter((_, i) => i !== index));
 
   const submit = async (e) => {
     e.preventDefault();
     setError("");
 
+    const incompleteIdx = books.findIndex((b) => !categoryComplete(b) || !b.bookName);
+    if (incompleteIdx !== -1) {
+      setError(`Book ${incompleteIdx + 1} needs its category details and book name filled in.`);
+      setOpenIndex(incompleteIdx);
+      return;
+    }
+
     const badBook = books.findIndex((b) => b.files.length !== 4);
     if (badBook !== -1) {
       setError(`Book ${badBook + 1} needs exactly 4 photos (currently ${books[badBook].files.length}).`);
+      setOpenIndex(badBook);
       return;
     }
 
     setSubmitting(true);
     try {
       const fd = new FormData();
-      const metadata = books.map(({ bookName, class: cls, board, subject, author, publication, condition }) => ({
-        bookName, class: cls, board, subject, author, publication, condition,
-      }));
+      const metadata = books.map((b) => {
+        const resolved = resolveCategoryFields(b);
+        return { bookName: b.bookName, class: resolved.cls, board: resolved.board, subject: resolved.subject, author: b.author, publication: b.publication, condition: b.condition };
+      });
       fd.append("books", JSON.stringify(metadata));
 
       books.forEach((b, i) => {
@@ -444,66 +701,95 @@ function BulkBookUpload() {
   }
 
   return (
-    <form onSubmit={submit} className="space-y-6">
-      {books.map((b, i) => (
-        <div key={i} className="bg-white border border-mint-line rounded-2xl p-6 space-y-4 relative">
-          <div className="flex justify-between items-center">
-            <p className="text-xs font-mono font-semibold text-muted uppercase">Book {i + 1}</p>
-            {books.length > 1 && (
-              <button type="button" onClick={() => removeBook(i)} className="text-rose hover:opacity-70">
-                <Trash2 size={16} />
-              </button>
-            )}
-          </div>
-          <div className="grid sm:grid-cols-2 gap-4">
-            <Field label="Book Name" value={b.bookName} onChange={(v) => updateBook(i, "bookName", v)} />
-            <Field label="Class" value={b.class} onChange={(v) => updateBook(i, "class", v)} />
-            <Field label="Board" value={b.board} onChange={(v) => updateBook(i, "board", v)} />
-            <Field label="Subject" value={b.subject} onChange={(v) => updateBook(i, "subject", v)} />
-            <Field label="Author" value={b.author} onChange={(v) => updateBook(i, "author", v)} />
-            <Field label="Publication" value={b.publication} onChange={(v) => updateBook(i, "publication", v)} />
-          </div>
-          <div>
-            <label className="text-xs font-medium text-muted block mb-1">Condition</label>
-            <select
-              value={b.condition}
-              onChange={(e) => updateBook(i, "condition", e.target.value)}
-              className="w-full border border-mint-line rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-forest"
+    <form onSubmit={submit} className="space-y-4 sm:space-y-6">
+      {books.map((b, i) => {
+        const open = openIndex === i;
+        const complete = categoryComplete(b) && !!b.bookName && b.files.length === 4;
+        return (
+          <div key={i} className="bg-white border border-mint-line rounded-2xl overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setOpenIndex(open ? -1 : i)}
+              className="w-full flex items-center justify-between gap-3 px-4 sm:px-6 py-4 text-left"
             >
-              {["Poor", "Fair", "Good", "Excellent"].map((c) => <option key={c}>{c}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="text-xs font-medium text-muted block mb-1">Photos — exactly 4 required</label>
-            <input type="file" accept="image/*" multiple onChange={(e) => onFile(i, e)} className="text-sm" />
-            <p className={`text-xs mt-2 font-medium ${b.files.length === 4 ? "text-forest" : "text-muted"}`}>
-              {b.files.length}/4 photos selected
-            </p>
-            {b.previews.length > 0 && (
-              <div className="flex gap-2 mt-3 flex-wrap">
-                {b.previews.map((src, j) => (
-                  <div key={j} className="relative">
-                    <img src={src} alt="" className="w-14 h-14 object-cover rounded-lg border border-mint-line" />
-                    <button
-                      type="button"
-                      onClick={() => removeBookFile(i, j)}
-                      className="absolute -top-2 -right-2 bg-rose text-white rounded-full w-5 h-5 flex items-center justify-center text-xs leading-none"
-                      aria-label="Remove photo"
-                    >
-                      <X size={12} />
-                    </button>
-                  </div>
-                ))}
+              <div className="flex items-center gap-2.5 min-w-0">
+                <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 ${complete ? "btn-brand text-white" : "bg-mint text-forest"}`}>
+                  {complete ? <Check size={13} /> : i + 1}
+                </span>
+                <div className="min-w-0">
+                  <p className="text-xs font-mono font-semibold text-muted uppercase">Book {i + 1}</p>
+                  <p className="text-sm font-semibold text-ink truncate">{b.bookName || "Untitled book"}</p>
+                </div>
               </div>
-            )}
+              <div className="flex items-center gap-3 shrink-0">
+                {books.length > 1 && (
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    onClick={(e) => { e.stopPropagation(); removeBook(i); }}
+                    className="text-rose hover:opacity-70 p-1"
+                  >
+                    <Trash2 size={16} />
+                  </span>
+                )}
+                <ChevronDown size={18} className={`text-muted transition-transform ${open ? "rotate-180" : ""}`} />
+              </div>
+            </button>
+
+            <div className={`grid transition-all duration-200 ease-out ${open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}>
+              <div className="overflow-hidden">
+                <div className="px-4 sm:px-6 pb-6 space-y-5 border-t border-mint-line pt-5">
+                  <CategoryFormFields f={b} set={(patch) => patchBook(i, patch)} />
+
+                  <div>
+                    <label className="text-xs font-medium text-muted block mb-1">Condition</label>
+                    <select
+                      value={b.condition}
+                      onChange={(e) => updateBook(i, "condition", e.target.value)}
+                      className="w-full border border-mint-line rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-forest"
+                    >
+                      {["Poor", "Fair", "Good", "Excellent"].map((c) => <option key={c}>{c}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-muted block mb-1">Photos — exactly 4 required</label>
+                    <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-mint-line rounded-xl py-6 cursor-pointer hover:bg-mint transition">
+                      <Upload size={18} className="text-forest" />
+                      <span className="text-xs text-muted text-center px-4">Tap to upload cover, back, spine, and any damage</span>
+                      <input type="file" accept="image/*" multiple onChange={(e) => onFile(i, e)} className="hidden" />
+                    </label>
+                    <p className={`text-xs mt-2 font-medium ${b.files.length === 4 ? "text-forest" : "text-muted"}`}>
+                      {b.files.length}/4 photos selected
+                    </p>
+                    {b.previews.length > 0 && (
+                      <div className="flex gap-2 mt-3 flex-wrap">
+                        {b.previews.map((src, j) => (
+                          <div key={j} className="relative">
+                            <img src={src} alt="" className="w-14 h-14 object-cover rounded-lg border border-mint-line" />
+                            <button
+                              type="button"
+                              onClick={() => removeBookFile(i, j)}
+                              className="absolute -top-2 -right-2 bg-rose text-white rounded-full w-5 h-5 flex items-center justify-center text-xs leading-none"
+                              aria-label="Remove photo"
+                            >
+                              <X size={12} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
 
       <button
         type="button"
         onClick={addBook}
-        className="flex items-center gap-2 text-sm font-semibold text-forest border border-mint-line rounded-lg px-4 py-2 hover:bg-mint transition"
+        className="w-full sm:w-auto flex items-center justify-center gap-2 text-sm font-semibold text-forest border border-mint-line rounded-lg px-4 py-2.5 hover:bg-mint transition"
       >
         <Plus size={16} /> Add Another Book
       </button>
@@ -513,7 +799,7 @@ function BulkBookUpload() {
       <button
         type="submit"
         disabled={submitting}
-        className="w-full btn-brand text-white font-semibold py-2.5 rounded-lg transition disabled:opacity-50"
+        className="w-full btn-brand text-white font-semibold py-3 sm:py-2.5 rounded-lg transition disabled:opacity-50 sticky bottom-3 sm:static shadow-lg sm:shadow-none"
       >
         {submitting ? "Submitting all books..." : `Submit ${books.length} Book(s)`}
       </button>
@@ -572,8 +858,8 @@ function TrackRequests() {
   }
 
   return (
-    <div className="bg-white border border-mint-line rounded-2xl overflow-hidden">
-      <table className="w-full text-sm">
+    <div className="bg-white border border-mint-line rounded-2xl overflow-x-auto">
+      <table className="w-full text-sm min-w-[640px]">
         <thead className="bg-mint text-left text-xs font-mono text-muted uppercase">
           <tr>
             <th className="px-5 py-3">Tracking ID</th>
@@ -827,8 +1113,8 @@ function PaymentHistory() {
           No payments yet. Completed pickups will show up here.
         </div>
       ) : (
-        <div className="bg-white border border-mint-line rounded-2xl overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="bg-white border border-mint-line rounded-2xl overflow-x-auto">
+          <table className="w-full text-sm min-w-[640px]">
             <thead className="bg-mint text-left text-xs font-mono text-muted uppercase">
               <tr>
                 <th className="px-5 py-3">Books</th>
