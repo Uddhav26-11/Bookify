@@ -24,6 +24,24 @@ const BOARD_OPTIONS = ["CBSE", "ICSE", "State Board", "Other"];
 const CLASS_OPTIONS = Array.from({ length: 12 }, (_, i) => String(i + 1));
 const SCHOOL_SUBJECTS = ["Mathematics", "Science", "English", "Hindi", "Social Science", "Physics", "Chemistry", "Biology", "Computer Science", "Sanskrit", "Other"];
 
+// Subjects genuinely differ by class stage (primary vs middle vs senior
+// secondary streams) — so the Subject dropdown adapts to whatever Class
+// was picked instead of always showing the same long generic list.
+function getSchoolSubjects(cls) {
+  const n = Number(cls);
+  if (!n) return SCHOOL_SUBJECTS;
+  if (n <= 2) return ["Mathematics", "English", "Hindi", "Environmental Studies (EVS)", "Art & Craft", "Other"];
+  if (n <= 5) return ["Mathematics", "English", "Hindi", "Environmental Studies (EVS)", "Science", "Social Studies", "Computer", "Other"];
+  if (n <= 8) return ["Mathematics", "Science", "English", "Hindi", "Social Science", "Computer", "Sanskrit", "Other"];
+  if (n <= 10) return ["Mathematics", "Science", "English", "Hindi", "Social Science", "Computer Science", "Sanskrit", "Other"];
+  // 11th & 12th — senior secondary stream subjects
+  return [
+    "Physics", "Chemistry", "Mathematics", "Biology", "English",
+    "Economics", "Accountancy", "Business Studies", "Computer Science",
+    "Political Science", "History", "Geography", "Psychology", "Other",
+  ];
+}
+
 const COURSE_OPTIONS = ["B.Tech", "BCA", "BBA", "B.Com", "B.Sc", "B.A.", "MBA", "M.Tech", "M.Sc", "M.Com", "Other"];
 const YEAR_OPTIONS = ["1st", "2nd", "3rd", "4th"];
 const SEMESTER_OPTIONS = ["1", "2", "3", "4", "5", "6", "7", "8"];
@@ -123,8 +141,15 @@ function SelectField({ label, value, onChange, options, placeholder = "Select an
         setQuery("");
       }
     }
+    function onEsc(e) {
+      if (e.key === "Escape") { setOpen(false); setQuery(""); }
+    }
     document.addEventListener("mousedown", onDocClick);
-    return () => document.removeEventListener("mousedown", onDocClick);
+    document.addEventListener("keydown", onEsc);
+    return () => {
+      document.removeEventListener("mousedown", onDocClick);
+      document.removeEventListener("keydown", onEsc);
+    };
   }, []);
 
   const filtered = searchable && query ? options.filter((o) => o.toLowerCase().includes(query.toLowerCase())) : options;
@@ -135,49 +160,55 @@ function SelectField({ label, value, onChange, options, placeholder = "Select an
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className={`w-full flex items-center justify-between gap-2 rounded-lg border px-4 py-2.5 text-sm text-left bg-white transition ${
-          open ? "border-forest ring-2 ring-forest/20" : "border-mint-line"
+        className={`w-full flex items-center justify-between gap-2 rounded-xl border px-4 py-2.5 text-sm text-left bg-white transition ${
+          open ? "border-forest ring-2 ring-forest/15 shadow-sm" : "border-mint-line hover:border-forest/40"
         }`}
       >
-        <span className={value ? "text-ink" : "text-muted"}>{value || placeholder}</span>
-        <ChevronDown size={16} className={`text-muted shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
+        <span className={value ? "text-ink font-medium" : "text-muted"}>{value || placeholder}</span>
+        <ChevronDown size={16} className={`text-muted shrink-0 transition-transform duration-200 ${open ? "rotate-180 text-forest" : ""}`} />
       </button>
 
-      <div className={`grid transition-all duration-200 ease-out ${open ? "grid-rows-[1fr] opacity-100 mt-2" : "grid-rows-[0fr] opacity-0"}`}>
-        <div className="overflow-hidden">
-          <div className="border border-mint-line rounded-xl bg-white shadow-lg max-h-60 overflow-y-auto">
+      {open && (
+        <>
+          {/* Backdrop just for mobile to make the floating panel feel intentional; transparent, click-through-safe via ref check above */}
+          <div
+            className="absolute z-30 left-0 right-0 top-[calc(100%+6px)] origin-top rounded-2xl border border-mint-line bg-white shadow-[0_12px_32px_-8px_rgba(20,36,32,0.18)] overflow-hidden animate-[popIn_0.16s_ease-out]"
+          >
             {searchable && (
-              <div className="p-2 sticky top-0 bg-white border-b border-mint-line flex items-center gap-2">
-                <Search size={14} className="text-muted ml-1.5 shrink-0" />
+              <div className="p-2.5 border-b border-mint-line flex items-center gap-2 bg-mint/40">
+                <Search size={14} className="text-muted ml-1 shrink-0" />
                 <input
                   autoFocus
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Search..."
-                  className="w-full px-1.5 py-1.5 text-sm focus:outline-none"
+                  className="w-full px-1.5 py-1.5 text-sm bg-transparent focus:outline-none placeholder:text-muted"
                 />
               </div>
             )}
-            {filtered.length === 0 && <p className="px-4 py-3 text-sm text-muted">No matches found</p>}
-            {filtered.map((opt) => (
-              <button
-                key={opt}
-                type="button"
-                onClick={() => {
-                  onChange(opt);
-                  setOpen(false);
-                  setQuery("");
-                }}
-                className={`w-full text-left px-4 py-2.5 text-sm transition hover:bg-mint ${
-                  value === opt ? "bg-mint text-forest font-semibold" : "text-ink"
-                }`}
-              >
-                {opt}
-              </button>
-            ))}
+            <div className="max-h-52 overflow-y-auto py-1">
+              {filtered.length === 0 && <p className="px-4 py-3 text-sm text-muted">No matches found</p>}
+              {filtered.map((opt) => (
+                <button
+                  key={opt}
+                  type="button"
+                  onClick={() => {
+                    onChange(opt);
+                    setOpen(false);
+                    setQuery("");
+                  }}
+                  className={`w-full flex items-center justify-between gap-2 text-left px-4 py-2.5 text-sm transition hover:bg-mint ${
+                    value === opt ? "text-forest font-semibold" : "text-ink"
+                  }`}
+                >
+                  {opt}
+                  {value === opt && <Check size={14} className="text-forest shrink-0" />}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-      </div>
+        </>
+      )}
     </div>
   );
 }
@@ -193,9 +224,18 @@ function CategoryFormFields({ f, set }) {
       {f.category === "school" && (
         <div className="grid sm:grid-cols-2 gap-4 animate-[fadeIn_0.2s_ease-out]">
           <SelectField label="Board" value={f.board} onChange={(v) => set({ board: v })} options={BOARD_OPTIONS} placeholder="Select board" />
-          <SelectField label="Class" value={f.cls} onChange={(v) => set({ cls: v })} options={CLASS_OPTIONS} placeholder="Select class" searchable />
+          <SelectField label="Class" value={f.cls} onChange={(v) => set({ cls: v, subject: "", subjectCustom: "" })} options={CLASS_OPTIONS} placeholder="Select class" searchable />
           <div className="sm:col-span-2">
-            <SelectField label="Subject" value={f.subject} onChange={(v) => set({ subject: v, subjectCustom: v === "Other" ? f.subjectCustom : "" })} options={SCHOOL_SUBJECTS} placeholder="Select subject" searchable />
+            {f.cls ? (
+              <SelectField label="Subject" value={f.subject} onChange={(v) => set({ subject: v, subjectCustom: v === "Other" ? f.subjectCustom : "" })} options={getSchoolSubjects(f.cls)} placeholder="Select subject" searchable />
+            ) : (
+              <div>
+                <label className="text-xs font-medium text-muted block mb-1">Subject</label>
+                <div className="w-full rounded-xl border border-dashed border-mint-line px-4 py-2.5 text-sm text-muted bg-mint/30">
+                  Select a class first
+                </div>
+              </div>
+            )}
           </div>
           {f.subject === "Other" && <div className="sm:col-span-2"><Field label="Specify Subject" value={f.subjectCustom} onChange={(v) => set({ subjectCustom: v })} /></div>}
         </div>
@@ -737,7 +777,7 @@ function BulkBookUpload() {
             </button>
 
             <div className={`grid transition-all duration-200 ease-out ${open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}>
-              <div className="overflow-hidden">
+              <div className={open ? "overflow-visible" : "overflow-hidden"}>
                 <div className="px-4 sm:px-6 pb-6 space-y-5 border-t border-mint-line pt-5">
                   <CategoryFormFields f={b} set={(patch) => patchBook(i, patch)} />
 

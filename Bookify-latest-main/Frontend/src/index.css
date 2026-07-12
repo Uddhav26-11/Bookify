@@ -88,6 +88,11 @@ body { background: var(--color-paper); color: var(--color-ink); font-family: var
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes popIn {
+  from { opacity: 0; transform: translateY(-6px) scaleY(0.96); }
+  to { opacity: 1; transform: translateY(0) scaleY(1); }
+}
+
 /* Hero redesign animations */
 @keyframes fade-up {
   from { opacity: 0; transform: translateY(18px); }
