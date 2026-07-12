@@ -284,7 +284,10 @@ function buildSellerListingData(pickups = []) {
     const sellerName = p.seller?.name || "Unknown Seller";
     const books = p.books || [];
     for (const b of books) {
-      const price = b.finalPrice || b.sellerProposedPrice || b.aiEstimatedPrice || 0;
+      // NOTE: never fall back to sellerProposedPrice here — that's the
+      // seller's original ask, kept only for reference/history. Once a
+      // price is accepted, finalPrice is set and must be used everywhere.
+      const price = b.finalPrice || b.aiEstimatedPrice || 0;
       if (!map[sellerName]) map[sellerName] = { count: 0, value: 0 };
       map[sellerName].count += 1;
       map[sellerName].value += price;

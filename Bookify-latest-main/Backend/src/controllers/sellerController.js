@@ -100,7 +100,7 @@ exports.getSellerDashboardStats = async (req, res) => {
       if (paidStatuses.includes(book.status)) {
         completedOrders += 1;
         booksSold += 1;
-        revenue += book.finalPrice || book.sellerProposedPrice || book.aiEstimatedPrice || 0;
+        revenue += book.finalPrice || book.aiEstimatedPrice || 0;
       } else {
         pendingOrders += 1;
       }

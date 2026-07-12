@@ -36,6 +36,17 @@ exports.uploadBook = async (req, res) => {
       imageUrls = await uploadFilesToCloudinary(req.files);
     }
 
+    // IMPORTANT — price flow fix:
+    // The frontend only calls this endpoint after the seller clicks
+    // "Accept Offer" on the AI-suggested price. That accepted price is the
+    // final approved selling price from this point on — it must be stored
+    // as `finalPrice` immediately, not left at 0 waiting for the admin.
+    // `sellerProposedPrice` (the seller's original ask, e.g. ₹500) is kept
+    // ONLY for reference/history and must never feed earnings, revenue,
+    // purchase cost, profit, or any other money calculation anywhere in
+    // the app — those must always read `finalPrice`.
+    const acceptedPrice = Number(aiEstimatedPrice) || 0;
+
     const book = await Book.create({
       seller: req.user.id,
       bookName,
@@ -49,6 +60,8 @@ exports.uploadBook = async (req, res) => {
       aiEstimatedPrice: aiEstimatedPrice || undefined,
       confidenceScore: confidenceScore || undefined,
       sellerProposedPrice: sellerProposedPrice || undefined,
+      finalPrice: acceptedPrice,
+      priceApproval: "Accepted",
       status: "Requested",
     });
 
