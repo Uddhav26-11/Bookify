@@ -97,7 +97,26 @@ export default function DataTable({
         </span>
       </div>
 
-      <div className="overflow-x-auto">
+      {/* Mobile — stacked cards, no horizontal scroll */}
+      <div className="sm:hidden divide-y divide-mint-line">
+        {pageRows.length === 0 ? (
+          <div className="px-4 py-8 text-center text-sm text-muted">{emptyText}</div>
+        ) : (
+          pageRows.map((row, i) => (
+            <div key={row._id || i} className="p-4 space-y-2">
+              {columns.map((col) => (
+                <div key={col.key} className="flex items-start justify-between gap-3 text-sm">
+                  <span className="text-[11px] text-muted font-mono uppercase shrink-0 pt-0.5">{col.label}</span>
+                  <span className="text-right min-w-0">{col.render ? col.render(row) : row[col.key]}</span>
+                </div>
+              ))}
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Desktop / tablet — table */}
+      <div className="hidden sm:block overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-mint text-left text-xs font-mono text-muted uppercase sticky top-0 z-10">
             <tr>
