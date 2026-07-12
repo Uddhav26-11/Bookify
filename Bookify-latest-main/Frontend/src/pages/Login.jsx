@@ -21,15 +21,25 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const res = await api.post("/auth/login", { email: email.trim(), password });
+      const res = await api.post("/auth/login", {
+        email: email.trim(),
+        password,
+      });
       const { user, token } = res.data;
 
       setToken(token);
-      dispatch(login({ role: user.role, name: user.name, email: user.email, id: user.id }));
+      dispatch(
+        login({
+          role: user.role,
+          name: user.name,
+          email: user.email,
+          id: user.id,
+        }),
+      );
 
-      if (user.role === "admin") navigate("/admin");
-      else if (user.role === "seller") navigate("/seller");
-      else navigate("/customer");
+      if (user.role === "admin") navigate("/admin", { replace: true });
+      else if (user.role === "seller") navigate("/seller", { replace: true });
+      else navigate("/customer", { replace: true });
     } catch (err) {
       setError(err.response?.data?.message || "Invalid email or password.");
     } finally {
@@ -55,23 +65,38 @@ export default function Login() {
           </h1>
         </div>
 
-        <form onSubmit={handleLogin} className="bg-white/95 backdrop-blur border border-white/40 rounded-2xl shadow-xl shadow-black/20 p-6 space-y-4">
-          <p className="text-xs font-mono font-semibold text-muted uppercase tracking-wide">Login</p>
+        <form
+          onSubmit={handleLogin}
+          className="bg-white/95 backdrop-blur border border-white/40 rounded-2xl shadow-xl shadow-black/20 p-6 space-y-4"
+        >
+          <p className="text-xs font-mono font-semibold text-muted uppercase tracking-wide">
+            Login
+          </p>
 
           <div>
-            <label className="text-xs font-medium text-muted mb-1.5 block">Email</label>
+            <label className="text-xs font-medium text-muted mb-1.5 block">
+              Email
+            </label>
             <input
-              type="email" required placeholder="you@example.com" value={email}
+              type="email"
+              required
+              placeholder="you@example.com"
+              value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full border border-mint-line rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-forest transition"
             />
           </div>
 
           <div>
-            <label className="text-xs font-medium text-muted mb-1.5 block">Password</label>
+            <label className="text-xs font-medium text-muted mb-1.5 block">
+              Password
+            </label>
             <div className="relative">
               <input
-                type={showPassword ? "text" : "password"} required placeholder="••••••••" value={password}
+                type={showPassword ? "text" : "password"}
+                required
+                placeholder="••••••••"
+                value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full border border-mint-line rounded-lg px-4 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-forest transition"
               />
@@ -87,7 +112,9 @@ export default function Login() {
           </div>
 
           {error && (
-            <p className="text-rose text-sm font-medium bg-rose/10 border border-rose/20 rounded-lg px-3 py-2">{error}</p>
+            <p className="text-rose text-sm font-medium bg-rose/10 border border-rose/20 rounded-lg px-3 py-2">
+              {error}
+            </p>
           )}
 
           <button
@@ -100,8 +127,14 @@ export default function Login() {
         </form>
 
         <p className="text-center text-sm text-white/80 mt-6">
-          New seller? <Link to="/register/seller" className="text-lime font-semibold">Register</Link> ·{" "}
-          New customer? <Link to="/register/customer" className="text-lime font-semibold">Register</Link>
+          New seller?{" "}
+          <Link to="/register/seller" className="text-lime font-semibold">
+            Register
+          </Link>{" "}
+          · New customer?{" "}
+          <Link to="/register/customer" className="text-lime font-semibold">
+            Register
+          </Link>
         </p>
       </div>
     </div>

@@ -44,7 +44,7 @@ export default function CustomerRegister() {
 
       setToken(token);
       dispatch(login({ role: user.role, name: user.name, email: user.email, id: user.id }));
-      navigate("/customer");
+     navigate("/customer", { replace: true });
     } catch (err) {
       setError(err.response?.data?.message || "Registration failed. Try again.");
     } finally {

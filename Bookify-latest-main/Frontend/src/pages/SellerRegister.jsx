@@ -46,8 +46,8 @@ export default function SellerRegister() {
       const { user, token } = loginRes.data;
 
       setToken(token);
-      dispatch(login({ role: user.role, name: user.name, email: user.email, id: user.id }));
-      navigate("/seller");
+dispatch(login({ role: user.role, name: user.name, email: user.email, id: user.id }));
+navigate("/seller", { replace: true });
     } catch (err) {
       setError(err.response?.data?.message || "Registration failed. Try again.");
     } finally {
