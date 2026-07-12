@@ -24,22 +24,25 @@ const BOARD_OPTIONS = ["CBSE", "ICSE", "State Board", "Other"];
 const CLASS_OPTIONS = Array.from({ length: 12 }, (_, i) => String(i + 1));
 const SCHOOL_SUBJECTS = ["Mathematics", "Science", "English", "Hindi", "Social Science", "Physics", "Chemistry", "Biology", "Computer Science", "Sanskrit", "Other"];
 
+const STREAM_OPTIONS = ["Science", "Commerce", "Arts"];
+
 // Subjects genuinely differ by class stage (primary vs middle vs senior
 // secondary streams) — so the Subject dropdown adapts to whatever Class
-// was picked instead of always showing the same long generic list.
-function getSchoolSubjects(cls) {
+// (and, for 11th/12th, Stream) was picked instead of always showing the
+// same long generic list. Every list ends with "Other" as an escape hatch.
+function getSchoolSubjects(cls, stream) {
   const n = Number(cls);
   if (!n) return SCHOOL_SUBJECTS;
   if (n <= 2) return ["Mathematics", "English", "Hindi", "Environmental Studies (EVS)", "Art & Craft", "Other"];
   if (n <= 5) return ["Mathematics", "English", "Hindi", "Environmental Studies (EVS)", "Science", "Social Studies", "Computer", "Other"];
   if (n <= 8) return ["Mathematics", "Science", "English", "Hindi", "Social Science", "Computer", "Sanskrit", "Other"];
   if (n <= 10) return ["Mathematics", "Science", "English", "Hindi", "Social Science", "Computer Science", "Sanskrit", "Other"];
-  // 11th & 12th — senior secondary stream subjects
-  return [
-    "Physics", "Chemistry", "Mathematics", "Biology", "English",
-    "Economics", "Accountancy", "Business Studies", "Computer Science",
-    "Political Science", "History", "Geography", "Psychology", "Other",
-  ];
+
+  // 11th & 12th — subjects depend on the stream
+  if (stream === "Science") return ["Physics", "Chemistry", "Mathematics", "Biology", "English", "Computer Science", "Physical Education", "Other"];
+  if (stream === "Commerce") return ["Accountancy", "Business Studies", "Economics", "Mathematics", "English", "Computer Science", "Other"];
+  if (stream === "Arts") return ["History", "Geography", "Political Science", "Psychology", "Economics", "Sociology", "English", "Other"];
+  return [];
 }
 
 const COURSE_OPTIONS = ["B.Tech", "BCA", "BBA", "B.Com", "B.Sc", "B.A.", "MBA", "M.Tech", "M.Sc", "M.Com", "Other"];
@@ -54,7 +57,7 @@ const OTHER_CATEGORIES = ["Fiction", "Non-fiction", "Self-help", "Children's Boo
 function emptyCategoryForm() {
   return {
     category: "",
-    board: "", cls: "", subject: "", subjectCustom: "",
+    board: "", cls: "", stream: "", subject: "", subjectCustom: "",
     course: "", courseCustom: "", year: "", semester: "", collegeSubject: "", collegeSubjectCustom: "",
     examType: "", examTypeCustom: "",
     otherCategory: "", otherCategoryCustom: "",
@@ -66,7 +69,9 @@ function emptyCategoryForm() {
 // board / class / subject fields, without touching any backend code.
 function resolveCategoryFields(f) {
   if (f.category === "school") {
-    return { board: f.board, cls: f.cls, subject: f.subject === "Other" ? f.subjectCustom : f.subject };
+    const needsStream = Number(f.cls) >= 11;
+    const cls = needsStream && f.stream ? `${f.cls} (${f.stream})` : f.cls;
+    return { board: f.board, cls, subject: f.subject === "Other" ? f.subjectCustom : f.subject };
   }
   if (f.category === "college") {
     const course = f.course === "Other" ? f.courseCustom : f.course;
@@ -86,7 +91,10 @@ function resolveCategoryFields(f) {
 
 function categoryComplete(f) {
   if (!f.category) return false;
-  if (f.category === "school") return !!(f.board && f.cls && f.subject && (f.subject !== "Other" || f.subjectCustom));
+  if (f.category === "school") {
+    const needsStream = Number(f.cls) >= 11;
+    return !!(f.board && f.cls && (!needsStream || f.stream) && f.subject && (f.subject !== "Other" || f.subjectCustom));
+  }
   if (f.category === "college") return !!(f.course && (f.course !== "Other" || f.courseCustom) && f.year && f.semester && f.collegeSubject && (f.collegeSubject !== "Other" || f.collegeSubjectCustom));
   if (f.category === "competitive") return !!(f.examType && (f.examType !== "Other" || f.examTypeCustom));
   if (f.category === "other") return !!(f.otherCategory && (f.otherCategory !== "Other" || f.otherCategoryCustom));
@@ -224,18 +232,29 @@ function CategoryFormFields({ f, set }) {
       {f.category === "school" && (
         <div className="grid sm:grid-cols-2 gap-4 animate-[fadeIn_0.2s_ease-out]">
           <SelectField label="Board" value={f.board} onChange={(v) => set({ board: v })} options={BOARD_OPTIONS} placeholder="Select board" />
-          <SelectField label="Class" value={f.cls} onChange={(v) => set({ cls: v, subject: "", subjectCustom: "" })} options={CLASS_OPTIONS} placeholder="Select class" searchable />
+          <SelectField label="Class" value={f.cls} onChange={(v) => set({ cls: v, stream: "", subject: "", subjectCustom: "" })} options={CLASS_OPTIONS} placeholder="Select class" searchable />
+
+          {Number(f.cls) >= 11 && (
+            <div className="sm:col-span-2">
+              <SelectField label="Stream" value={f.stream} onChange={(v) => set({ stream: v, subject: "", subjectCustom: "" })} options={STREAM_OPTIONS} placeholder="Select stream" />
+            </div>
+          )}
+
           <div className="sm:col-span-2">
-            {f.cls ? (
-              <SelectField label="Subject" value={f.subject} onChange={(v) => set({ subject: v, subjectCustom: v === "Other" ? f.subjectCustom : "" })} options={getSchoolSubjects(f.cls)} placeholder="Select subject" searchable />
-            ) : (
-              <div>
-                <label className="text-xs font-medium text-muted block mb-1">Subject</label>
-                <div className="w-full rounded-xl border border-dashed border-mint-line px-4 py-2.5 text-sm text-muted bg-mint/30">
-                  Select a class first
+            {(() => {
+              const needsStream = Number(f.cls) >= 11;
+              const ready = f.cls && (!needsStream || f.stream);
+              return ready ? (
+                <SelectField label="Subject" value={f.subject} onChange={(v) => set({ subject: v, subjectCustom: v === "Other" ? f.subjectCustom : "" })} options={getSchoolSubjects(f.cls, f.stream)} placeholder="Select subject" searchable />
+              ) : (
+                <div>
+                  <label className="text-xs font-medium text-muted block mb-1">Subject</label>
+                  <div className="w-full rounded-xl border border-dashed border-mint-line px-4 py-2.5 text-sm text-muted bg-mint/30">
+                    {needsStream && f.cls ? "Select a stream first" : "Select a class first"}
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
           </div>
           {f.subject === "Other" && <div className="sm:col-span-2"><Field label="Specify Subject" value={f.subjectCustom} onChange={(v) => set({ subjectCustom: v })} /></div>}
         </div>
