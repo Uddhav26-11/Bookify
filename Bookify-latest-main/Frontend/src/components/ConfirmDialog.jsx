@@ -51,8 +51,7 @@ export function ConfirmProvider({ children }) {
 
           {/* Notification-style card — slides in from the bottom-left corner */}
           <div
-            className="absolute bottom-4 left-4 w-[calc(100%-2rem)] sm:w-96 pointer-events-auto bg-white rounded-2xl p-5 shadow-2xl shadow-ink/20 border border-mint-line animate-toast-in"
-            role="alertdialog"
+           className="absolute bottom-4 right-4 w-[calc(100%-2rem)] sm:w-96 pointer-events-auto bg-white rounded-2xl p-5 shadow-2xl shadow-ink/20 border border-mint-line animate-toast-in" role="alertdialog"
             aria-modal="true"
             onClick={(e) => e.stopPropagation()}
           >
