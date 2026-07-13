@@ -459,6 +459,54 @@ exports.sendCounterOffer = async (req, res) => {
   }
 };
 
+// Fetches the platform's own Stripe account + balance details, so the
+// admin can see where customer payments actually land and what payout
+// funds are available — without having to log into dashboard.stripe.com.
+// Read-only; never exposes the secret key itself.
+exports.getStripeAccountDetails = async (req, res) => {
+  try {
+    if (!process.env.STRIPE_SECRET_KEY) {
+      return res.status(200).json({
+        success: true,
+        configured: false,
+        message: "Stripe is not configured on the server (missing STRIPE_SECRET_KEY).",
+      });
+    }
+
+    const [account, balance] = await Promise.all([
+      stripe.accounts.retrieve().catch(() => null), // may fail on some restricted keys
+      stripe.balance.retrieve(),
+    ]);
+
+    const toRupees = (amountArr) =>
+      (amountArr || []).map((b) => ({ currency: b.currency.toUpperCase(), amount: b.amount / 100 }));
+
+    return res.status(200).json({
+      success: true,
+      configured: true,
+      account: account
+        ? {
+            id: account.id,
+            businessName: account.business_profile?.name || account.settings?.dashboard?.display_name || null,
+            country: account.country,
+            email: account.email,
+            defaultCurrency: account.default_currency?.toUpperCase(),
+            chargesEnabled: account.charges_enabled,
+            payoutsEnabled: account.payouts_enabled,
+            mode: process.env.STRIPE_SECRET_KEY.startsWith("sk_live") ? "live" : "test",
+          }
+        : { mode: process.env.STRIPE_SECRET_KEY.startsWith("sk_live") ? "live" : "test" },
+      balance: {
+        available: toRupees(balance.available),
+        pending: toRupees(balance.pending),
+      },
+    });
+  } catch (error) {
+    console.error("Stripe account fetch error:", error.raw || error);
+    return res.status(500).json({ success: false, message: error.message || "Failed to fetch Stripe account details" });
+  }
+};
+
 exports.getAllUsers = async (req, res) => {
   try {
     const users = await User.find().select("-password");

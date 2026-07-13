@@ -16,12 +16,14 @@ const {
   getAllOrders,
   deleteOrder,
   getAnalytics,
+  getStripeAccountDetails,
 } = require("../controllers/adminController");
 const { protect } = require("../middleware/authMiddleware");
 const { authorizeRoles } = require("../middleware/roleMiddleware");
 
 router.get("/dashboard", protect, authorizeRoles("admin"), getDashboardStats);
 router.get("/analytics", protect, authorizeRoles("admin"), getAnalytics);
+router.get("/stripe-account", protect, authorizeRoles("admin"), getStripeAccountDetails);
 router.get("/pickups", protect, authorizeRoles("admin"), getAllPickups);
 router.patch(
   "/pickups/:id/status",
