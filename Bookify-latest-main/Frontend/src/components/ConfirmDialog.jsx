@@ -3,9 +3,9 @@ import { AlertTriangle } from "lucide-react";
 
 // -----------------------------------------------------------------------
 // Custom confirm dialog — replaces window.confirm() everywhere in the app.
-// Renders as a bottom-sheet on mobile and a centered card on desktop,
-// styled to match the rest of the app instead of the browser's native
-// popup. Promise-based so call sites can keep an `if (!ok) return;` style.
+// Renders as a small on-brand card that slides in from the bottom-left
+// corner (like a notification), instead of the browser's native popup.
+// Promise-based so call sites can keep an `if (!ok) return;` style.
 //
 // Usage:
 //   const confirm = useConfirm();
@@ -44,22 +44,19 @@ export function ConfirmProvider({ children }) {
       {children}
 
       {state && (
-        <div className="fixed inset-0 z-[110] flex items-end sm:items-center justify-center">
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-ink/40 backdrop-blur-sm animate-fade-in"
-            onClick={() => close(false)}
-          />
+        <div className="fixed inset-0 z-[110] pointer-events-none">
+          {/* Invisible click-catcher so clicking outside the card cancels,
+              without dimming/blocking the rest of the screen like a modal */}
+          <div className="absolute inset-0 pointer-events-auto" onClick={() => close(false)} />
 
-          {/* Dialog — slides up from bottom on mobile, fades+scales in on desktop */}
+          {/* Notification-style card — slides in from the bottom-left corner */}
           <div
-            className="relative bg-white w-full sm:w-[420px] rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl shadow-ink/20 animate-sheet-up sm:animate-scale-in"
+            className="absolute bottom-4 left-4 w-[calc(100%-2rem)] sm:w-96 pointer-events-auto bg-white rounded-2xl p-5 shadow-2xl shadow-ink/20 border border-mint-line animate-toast-in"
             role="alertdialog"
             aria-modal="true"
+            onClick={(e) => e.stopPropagation()}
           >
-            <div className="sm:hidden w-10 h-1.5 rounded-full bg-mint-line mx-auto mb-4" />
-
-            <div className="flex items-start gap-3 mb-2">
+            <div className="flex items-start gap-3">
               <div
                 className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
                   state.danger ? "bg-rose/10 text-rose" : "bg-mint text-forest"
@@ -68,24 +65,23 @@ export function ConfirmProvider({ children }) {
                 <AlertTriangle size={19} />
               </div>
               <div className="flex-1 pt-1">
-                <h3 className="font-display font-semibold text-ink text-lg leading-tight">{state.title}</h3>
+                <h3 className="font-display font-semibold text-ink text-base leading-tight">{state.title}</h3>
+                {state.message && (
+                  <p className="text-sm text-muted mt-1 leading-relaxed">{state.message}</p>
+                )}
               </div>
             </div>
 
-            {state.message && (
-              <p className="text-sm text-muted mt-2 ml-[52px] leading-relaxed">{state.message}</p>
-            )}
-
-            <div className="flex gap-3 mt-6">
+            <div className="flex gap-2 mt-4">
               <button
                 onClick={() => close(false)}
-                className="flex-1 py-2.5 rounded-full border border-mint-line text-ink font-semibold text-sm hover:bg-mint transition"
+                className="flex-1 py-2 rounded-full border border-mint-line text-ink font-semibold text-sm hover:bg-mint transition"
               >
                 {state.cancelLabel}
               </button>
               <button
                 onClick={() => close(true)}
-                className={`flex-1 py-2.5 rounded-full text-white font-semibold text-sm transition ${
+                className={`flex-1 py-2 rounded-full text-white font-semibold text-sm transition ${
                   state.danger ? "bg-rose hover:brightness-95" : "btn-brand"
                 }`}
               >

@@ -12,8 +12,12 @@ import AdminBooks from "../components/admin/AdminBooks";
 import AdminPayments from "../components/admin/AdminPayments";
 import AdminSettings from "../components/admin/AdminSettings";
 import NotificationsPage from "./NotificationsPage";
+import { useConfirm } from "../components/ConfirmDialog";
+import { useToast } from "../components/Toast";
 
 export default function AdminDashboard() {
+  const confirmDialog = useConfirm();
+  const toast = useToast();
   const [active, setActive] = useState("overview");
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -56,7 +60,7 @@ export default function AdminDashboard() {
       await api.patch(`/admin/pickups/${pickupId}/status`, { status });
       fetchData();
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to update status");
+      toast.error(err.response?.data?.message || "Failed to update status");
     }
   };
 
@@ -65,7 +69,7 @@ export default function AdminDashboard() {
       await api.patch(`/admin/pickups/${pickupId}/pay`, { paymentMode, transactionId });
       fetchData();
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to mark as paid");
+      toast.error(err.response?.data?.message || "Failed to mark as paid");
     }
   };
 
@@ -74,17 +78,23 @@ export default function AdminDashboard() {
       await api.patch(`/admin/books/${bookId}/counter-offer`, { price, note });
       fetchData();
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to send counter-offer");
+      toast.error(err.response?.data?.message || "Failed to send counter-offer");
     }
   };
 
   const deletePickup = async (pickup) => {
-    if (!confirm("Delete this pickup request and its books?")) return;
+    const ok = await confirmDialog({
+      title: "Delete pickup request?",
+      message: "Delete this pickup request and its books?",
+      confirmLabel: "Delete",
+    });
+    if (!ok) return;
     try {
       await api.delete(`/admin/pickups/${pickup._id}`);
       fetchData();
+      toast.success("Pickup request deleted");
     } catch (err) {
-      alert("Failed to delete");
+      toast.error("Failed to delete");
     }
   };
 
@@ -93,17 +103,23 @@ export default function AdminDashboard() {
       await api.patch(`/admin/books/${bookId}/price`, { finalPrice: Number(price) });
       fetchData();
     } catch (err) {
-      alert("Failed to update price");
+      toast.error("Failed to update price");
     }
   };
 
   const deleteBook = async (bookId) => {
-    if (!confirm("Delete this book?")) return;
+    const ok = await confirmDialog({
+      title: "Delete book?",
+      message: "Delete this book?",
+      confirmLabel: "Delete",
+    });
+    if (!ok) return;
     try {
       await api.delete(`/admin/books/${bookId}`);
       fetchData();
+      toast.success("Book deleted");
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to delete book");
+      toast.error(err.response?.data?.message || "Failed to delete book");
     }
   };
 
@@ -112,17 +128,23 @@ export default function AdminDashboard() {
       await api.patch(`/admin/orders/${orderId}/status`, { orderStatus });
       fetchData();
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to update order status");
+      toast.error(err.response?.data?.message || "Failed to update order status");
     }
   };
 
   const deleteOrder = async (order) => {
-    if (!confirm("Delete this order permanently? This cannot be undone.")) return;
+    const ok = await confirmDialog({
+      title: "Delete order?",
+      message: "Delete this order permanently? This cannot be undone.",
+      confirmLabel: "Delete",
+    });
+    if (!ok) return;
     try {
       await api.delete(`/admin/orders/${order._id}`);
       fetchData();
+      toast.success("Order deleted");
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to delete order");
+      toast.error(err.response?.data?.message || "Failed to delete order");
     }
   };
 
