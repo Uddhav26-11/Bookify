@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { ShoppingCart, LogOut } from "lucide-react";
 import Logo from "./Logo";
@@ -13,6 +13,7 @@ export default function Navbar() {
   const cartCount = useSelector((s) => s.cart.items.reduce((a, i) => a + i.qty, 0));
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleHowItWorks = (e) => {
     e.preventDefault();
@@ -60,12 +61,20 @@ export default function Navbar() {
               <span className="text-sm font-medium text-ink hidden sm:block">
                 Hi, {name}
               </span>
-              <Link
-                to={role === "admin" ? "/admin" : role === "seller" ? "/seller" : "/customer"}
-                className="px-4 py-2 rounded-full btn-brand text-white text-sm font-semibold transition"
-              >
-                {role === "admin" ? "Admin Dashboard" : role === "seller" ? "Seller Dashboard" : "Dashboard"}
-              </Link>
+              {(() => {
+                const dashboardPath =
+                  role === "admin" ? "/admin" : role === "seller" ? "/seller" : "/customer";
+                const onDashboard = location.pathname.startsWith(dashboardPath);
+                if (onDashboard) return null;
+                return (
+                  <Link
+                    to={dashboardPath}
+                    className="px-4 py-2 rounded-full btn-brand text-white text-sm font-semibold transition"
+                  >
+                    {role === "admin" ? "Admin Dashboard" : role === "seller" ? "Seller Dashboard" : "Dashboard"}
+                  </Link>
+                );
+              })()}
               <button
                 onClick={() => {
                   api.post("/auth/logout").catch(() => {});
