@@ -21,6 +21,8 @@ import useNotificationSocket from "./hooks/useNotificationSocket";
 import { fetchCurrentUser, getToken } from "./api/auth";
 import { login, authBootstrapped } from "./store/authSlice";
 import ProtectedRoute from "./components/ProtectedRoute";
+import { ToastProvider } from "./components/Toast";
+import { ConfirmProvider } from "./components/ConfirmDialog";
 
 export default function App() {
   const dispatch = useDispatch();
@@ -62,63 +64,71 @@ export default function App() {
 
   if (restoring) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-muted text-sm">
-        Loading…
-      </div>
+      <ToastProvider>
+        <ConfirmProvider>
+          <div className="min-h-screen flex items-center justify-center text-muted text-sm">
+            Loading…
+          </div>
+        </ConfirmProvider>
+      </ToastProvider>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navbar />
-      <main className="flex-1">
-        <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register/seller" element={<SellerRegister />} />
-          <Route path="/register/customer" element={<CustomerRegister />} />
-          <Route
-            path="/sell"
-            element={
-              <ProtectedRoute allowedRoles={["seller"]}>
-                <SellerDashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/seller"
-            element={
-              <ProtectedRoute allowedRoles={["seller"]}>
-                <SellerDashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/access-denied" element={<AccessDenied />} />
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute allowedRoles={["admin"]}>
-                <AdminDashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/customer"
-            element={
-              <ProtectedRoute allowedRoles={["customer"]}>
-                <CustomerDashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/marketplace" element={<Marketplace />} />
-          <Route path="/book/:id" element={<BookDetails />} />
-          <Route path="/cart" element={<Cart />} />
-          <Route path="/order-success" element={<OrderSuccess />} />
-          <Route path="/orders" element={<MyOrders />} />
-          <Route path="/notifications" element={<NotificationsPage />} />
-        </Routes>
-      </main>
-      <Footer />
-    </div>
+    <ToastProvider>
+      <ConfirmProvider>
+        <div className="min-h-screen flex flex-col">
+          <Navbar />
+          <main className="flex-1">
+            <Routes>
+              <Route path="/" element={<Landing />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register/seller" element={<SellerRegister />} />
+              <Route path="/register/customer" element={<CustomerRegister />} />
+              <Route
+                path="/sell"
+                element={
+                  <ProtectedRoute allowedRoles={["seller"]}>
+                    <SellerDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/seller"
+                element={
+                  <ProtectedRoute allowedRoles={["seller"]}>
+                    <SellerDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="/access-denied" element={<AccessDenied />} />
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute allowedRoles={["admin"]}>
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/customer"
+                element={
+                  <ProtectedRoute allowedRoles={["customer"]}>
+                    <CustomerDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="/marketplace" element={<Marketplace />} />
+              <Route path="/book/:id" element={<BookDetails />} />
+              <Route path="/cart" element={<Cart />} />
+              <Route path="/order-success" element={<OrderSuccess />} />
+              <Route path="/orders" element={<MyOrders />} />
+              <Route path="/notifications" element={<NotificationsPage />} />
+            </Routes>
+          </main>
+          <Footer />
+        </div>
+      </ConfirmProvider>
+    </ToastProvider>
   );
 }

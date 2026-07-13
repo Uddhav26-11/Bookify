@@ -67,7 +67,7 @@ export default function Marketplace() {
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-10">
-      <BackButton fallback="/" />
+      <BackButton fallback="/" sticky />
       <h1 className="font-display text-3xl font-semibold text-ink mt-5">Buy Books</h1>
       <p className="text-muted text-sm mt-1">Quality-checked used books, at a fraction of the price.</p>
 

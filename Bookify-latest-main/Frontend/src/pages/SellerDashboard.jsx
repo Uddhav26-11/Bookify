@@ -9,6 +9,7 @@ import StatusPill from "../components/StatusPill";
 import BackButton from "../components/BackButton";
 import { getAIEstimate } from "../data/aiPricing";
 import api from "../api/axios";
+import { useToast } from "../components/Toast";
 
 const TABS = ["Upload Book", "Track Requests", "Payment History", "Bank Details"];
 
@@ -369,7 +370,7 @@ export default function SellerDashboard() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
-      <BackButton fallback="/" />
+      <BackButton fallback="/" sticky />
       <h1 className="text-2xl sm:text-3xl font-bold text-ink mt-5">Seller Dashboard</h1>
       <p className="text-muted text-sm mt-1">Upload books, track pickup requests, and view your payments.</p>
 
@@ -1131,6 +1132,7 @@ function Field({ label, value, onChange }) {
 }
 
 function TrackRequests() {
+  const toast = useToast();
   const [pickups, setPickups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [respondingTo, setRespondingTo] = useState(null); // bookId currently submitting
@@ -1152,7 +1154,7 @@ function TrackRequests() {
       await api.patch(`/seller/books/${bookId}/counter-offer-response`, { action });
       load();
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to respond to offer");
+      toast.error(err.response?.data?.message || "Failed to respond to offer");
     } finally {
       setRespondingTo(null);
     }

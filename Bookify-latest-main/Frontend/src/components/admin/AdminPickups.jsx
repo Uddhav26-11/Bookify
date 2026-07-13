@@ -1,10 +1,14 @@
 import { useState } from "react";
 import { Trash2, Check, X, Image as ImageIcon, Landmark, Banknote, CreditCard, ExternalLink, Search } from "lucide-react";
 import StatusPill from "../StatusPill";
+import { useToast } from "../Toast";
+import { useConfirm } from "../ConfirmDialog";
 
 const STATUS_OPTIONS = ["Requested", "Assigned", "UnderVerification", "Approved", "Collected", "Paid", "Completed", "Rejected"];
 
 export default function AdminPickups({ pickups, onUpdateStatus, onPay, onCounterOffer, onDelete }) {
+  const toast = useToast();
+  const confirmDialog = useConfirm();
   const [previewImages, setPreviewImages] = useState(null);
   const [payModal, setPayModal] = useState(null);
   const [offerOpenFor, setOfferOpenFor] = useState(null);
@@ -15,14 +19,17 @@ export default function AdminPickups({ pickups, onUpdateStatus, onPay, onCounter
 
   const sendCounterOffer = async (bookId) => {
     if (!offerForm.price || Number(offerForm.price) <= 0) {
-      alert("Please enter a valid price to offer the seller.");
+      toast.error("Please enter a valid price to offer the seller.");
       return;
     }
     const book = pickups.flatMap((p) => p.books).find((b) => b._id === bookId);
     if (book && Number(offerForm.price) === book.aiEstimatedPrice) {
-      const proceed = confirm(
-        `This is the same as the AI's price (₹${book.aiEstimatedPrice}). If you agree with the AI price, just use "Approve" instead. Send this as a counter-offer anyway?`
-      );
+      const proceed = await confirmDialog({
+        title: "Same as AI price",
+        message: `This is the same as the AI's price (₹${book.aiEstimatedPrice}). If you agree with the AI price, just use "Approve" instead. Send this as a counter-offer anyway?`,
+        confirmLabel: "Send anyway",
+        danger: false,
+      });
       if (!proceed) return;
     }
     setOfferSaving(true);
@@ -298,6 +305,7 @@ export default function AdminPickups({ pickups, onUpdateStatus, onPay, onCounter
 }
 
 function PayModal({ pickup, onClose, onPay }) {
+  const toast = useToast();
   const [mode, setMode] = useState("Offline");
   const [transactionId, setTransactionId] = useState("");
   const [saving, setSaving] = useState(false);
@@ -308,7 +316,7 @@ function PayModal({ pickup, onClose, onPay }) {
 
   const submit = async () => {
     if (mode === "Online" && !transactionId.trim()) {
-      alert("Please enter the transaction / UTR reference for the online payment.");
+      toast.error("Please enter the transaction / UTR reference for the online payment.");
       return;
     }
     setSaving(true);

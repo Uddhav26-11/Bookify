@@ -53,7 +53,7 @@ export default function Cart() {
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-10">
-      <BackButton fallback="/marketplace" />
+      <BackButton fallback="/marketplace" sticky />
       <h1 className="font-display text-3xl font-semibold text-ink mt-5">Your Cart</h1>
 
       {items.length === 0 ? (

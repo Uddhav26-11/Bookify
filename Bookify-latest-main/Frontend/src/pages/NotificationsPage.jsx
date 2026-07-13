@@ -62,7 +62,7 @@ export default function NotificationsPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-6 py-10">
-      <BackButton fallback="/" className="mb-5" />
+      <BackButton fallback="/" className="mb-5" sticky />
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="font-display text-2xl text-ink">Notifications</h1>

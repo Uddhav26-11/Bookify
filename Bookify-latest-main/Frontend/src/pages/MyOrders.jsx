@@ -154,7 +154,7 @@ export default function MyOrders() {
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-10">
-      <BackButton fallback="/customer" />
+      <BackButton fallback="/customer" sticky />
       <h1 className="text-3xl font-bold text-ink flex items-center gap-3 mt-5">
         <Package size={28} className="text-forest" /> My Orders
       </h1>

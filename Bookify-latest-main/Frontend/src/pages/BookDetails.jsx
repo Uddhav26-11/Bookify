@@ -55,7 +55,7 @@ export default function BookDetails() {
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-10">
-      <BackButton fallback="/marketplace" className="mb-6" />
+      <BackButton fallback="/marketplace" className="mb-6" sticky />
       <div className="grid md:grid-cols-2 gap-10">
       <div className="grade-scan rounded-2xl overflow-hidden border border-mint-line bg-mint">
         <img src={book.image} alt={book.title} className="w-full aspect-[4/3] object-cover" />
