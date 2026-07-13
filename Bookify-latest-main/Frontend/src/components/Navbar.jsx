@@ -57,11 +57,14 @@ export default function Navbar() {
           {role && <NotificationBell />}
           {role ? (
             <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-ink hidden sm:block">
+                Hi, {name}
+              </span>
               <Link
                 to={role === "admin" ? "/admin" : role === "seller" ? "/seller" : "/customer"}
-                className="text-sm font-medium text-ink hidden sm:block"
+                className="px-4 py-2 rounded-full btn-brand text-white text-sm font-semibold transition"
               >
-                Hi, {name}
+                {role === "admin" ? "Admin Dashboard" : role === "seller" ? "Seller Dashboard" : "Dashboard"}
               </Link>
               <button
                 onClick={() => {
