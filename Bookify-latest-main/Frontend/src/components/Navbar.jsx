@@ -35,13 +35,7 @@ export default function Navbar() {
           isAdmin ? "px-4 sm:px-6" : "max-w-7xl mx-auto px-6"
         }`}
       >
-        {isAdmin ? (
-          <div className="lg:hidden">
-            <Link to="/"><Logo /></Link>
-          </div>
-        ) : (
-          <Link to="/"><Logo /></Link>
-        )}
+        <Link to="/"><Logo /></Link>
 
         {!isAdmin && (
           <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-ink/80">
