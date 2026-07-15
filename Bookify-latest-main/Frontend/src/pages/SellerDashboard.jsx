@@ -7,7 +7,10 @@ import {
 } from "lucide-react";
 import StatusPill from "../components/StatusPill";
 import BackButton from "../components/BackButton";
+import Lightbox from "../components/Lightbox";
+import SortDropdown from "../components/SortDropdown";
 import { getAIEstimate } from "../data/aiPricing";
+import { sortBooks } from "../utils/sortBooks";
 import api from "../api/axios";
 import { useToast } from "../components/Toast";
 
@@ -1136,6 +1139,8 @@ function TrackRequests() {
   const [pickups, setPickups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [respondingTo, setRespondingTo] = useState(null); // bookId currently submitting
+  const [sort, setSort] = useState("");
+  const [lightbox, setLightbox] = useState(null); // { images, startIndex, title }
 
   const load = () => {
     setLoading(true);
@@ -1174,9 +1179,23 @@ function TrackRequests() {
     <>
       {books.map((b) => (
         <div key={b._id} className="mb-2.5 last:mb-0">
-          <span>{b.bookName}</span>
-          <span className="text-muted font-mono text-[11px] block">Payment code: {b.trackingId}</span>
-          <span className="text-xs text-muted block">AI estimate: ₹{b.aiEstimatedPrice || 0}</span>
+          <div className="flex items-start gap-2">
+            {b.images?.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setLightbox({ images: b.images, startIndex: 0, title: b.bookName })}
+                className="w-9 h-9 rounded-lg overflow-hidden border border-mint-line shrink-0 hover:ring-2 hover:ring-forest transition"
+                title="View photos"
+              >
+                <img src={b.images[0]} alt="" className="w-full h-full object-cover" loading="lazy" />
+              </button>
+            )}
+            <div>
+              <span>{b.bookName}</span>
+              <span className="text-muted font-mono text-[11px] block">Payment code: {b.trackingId}</span>
+              <span className="text-xs text-muted block">AI estimate: ₹{b.aiEstimatedPrice || 0}</span>
+            </div>
+          </div>
 
           {b.priceApproval === "Pending" && (
             <div className="mt-1.5 bg-amber-50 border border-amber-200 rounded-lg p-2.5 text-xs">
@@ -1219,11 +1238,24 @@ function TrackRequests() {
     </>
   );
 
+  // Pickups are grouped by request (each holding 1+ books), so sort using
+  // the first book in each group as a representative for price/name sorts.
+  const sortedPickups = sort
+    ? sortBooks(
+        pickups.map((p) => ({ ...p, bookName: p.books?.[0]?.bookName, finalPrice: p.books?.[0]?.finalPrice ?? p.books?.[0]?.aiEstimatedPrice })),
+        sort
+      )
+    : pickups;
+
   return (
     <div>
+      <div className="flex justify-end mb-4">
+        <SortDropdown value={sort} onChange={setSort} />
+      </div>
+
       {/* Mobile / small screens — responsive cards, no horizontal scroll */}
       <div className="sm:hidden space-y-3">
-        {pickups.map((p) => (
+        {sortedPickups.map((p) => (
           <div key={p._id} className="bg-white border border-mint-line rounded-2xl p-4 shadow-sm">
             <div className="flex items-center justify-between gap-2 mb-2">
               <span className="font-mono text-xs text-forest font-semibold">{p.trackingId || p._id.slice(-8)}</span>
@@ -1251,7 +1283,7 @@ function TrackRequests() {
             </tr>
           </thead>
           <tbody>
-            {pickups.map((p) => (
+            {sortedPickups.map((p) => (
               <tr key={p._id} className="border-t border-mint-line">
                 <td className="px-5 py-3 font-mono text-xs text-forest font-semibold">{p.trackingId || p._id.slice(-8)}</td>
                 <td className="px-5 py-3">
@@ -1264,6 +1296,15 @@ function TrackRequests() {
           </tbody>
         </table>
       </div>
+
+      {lightbox && (
+        <Lightbox
+          images={lightbox.images}
+          startIndex={lightbox.startIndex}
+          title={lightbox.title}
+          onClose={() => setLightbox(null)}
+        />
+      )}
     </div>
   );
 }

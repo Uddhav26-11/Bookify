@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Trash2, Check, X, Image as ImageIcon, Landmark, Banknote, CreditCard, ExternalLink, Search } from "lucide-react";
 import StatusPill from "../StatusPill";
+import Lightbox from "../Lightbox";
 import { useToast } from "../Toast";
 import { useConfirm } from "../ConfirmDialog";
 
@@ -191,7 +192,12 @@ export default function AdminPickups({ pickups, onUpdateStatus, onPay, onCounter
                   <td className="px-4 py-3">
                     {p.books.some((b) => b.images?.length > 0) ? (
                       <button
-                        onClick={() => setPreviewImages(p.books.flatMap((b) => b.images))}
+                        onClick={() =>
+                          setPreviewImages({
+                            images: p.books.flatMap((b) => b.images || []),
+                            title: p.seller?.name ? `${p.seller.name}'s Book Photos` : "Book Photos",
+                          })
+                        }
                         className="flex items-center gap-1 text-xs font-semibold text-forest hover:underline"
                       >
                         <ImageIcon size={14} /> View Photos
@@ -286,19 +292,11 @@ export default function AdminPickups({ pickups, onUpdateStatus, onPay, onCounter
       )}
 
       {previewImages && (
-        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-6" onClick={() => setPreviewImages(null)}>
-          <div className="bg-white rounded-2xl p-4 max-w-3xl w-full max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="font-bold text-ink">Book Photos</h3>
-              <button onClick={() => setPreviewImages(null)} className="text-muted hover:text-rose"><X size={20} /></button>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {previewImages.map((src, i) => (
-                <img key={i} src={src} alt="" className="w-full h-40 object-cover rounded-xl border border-mint-line" />
-              ))}
-            </div>
-          </div>
-        </div>
+        <Lightbox
+          images={previewImages.images}
+          title={previewImages.title}
+          onClose={() => setPreviewImages(null)}
+        />
       )}
     </div>
   );

@@ -4,6 +4,7 @@ import { Search } from "lucide-react";
 import BookCard from "../components/BookCard";
 import BackButton from "../components/BackButton";
 import { categories } from "../data/mockData";
+import { sortBooks } from "../utils/sortBooks";
 import api from "../api/axios";
 
 // Maps a raw Book document from the backend into the flat shape
@@ -19,6 +20,7 @@ function normalizeBook(b) {
     condition: b.condition,
     price: b.finalPrice || b.aiEstimatedPrice || 0,
     image: b.images?.[0] || "",
+    createdAt: b.createdAt,
   };
 }
 
@@ -60,8 +62,12 @@ export default function Marketplace() {
     let list = inventory.filter((b) => b.title?.toLowerCase().includes(query.toLowerCase()));
     if (board !== "All") list = list.filter((b) => b.board === board);
     if (condition !== "All") list = list.filter((b) => b.condition === condition);
-    if (sort === "priceAsc") list = [...list].sort((a, b) => a.price - b.price);
-    if (sort === "priceDesc") list = [...list].sort((a, b) => b.price - a.price);
+    if (sort === "priceAsc") list = sortBooks(list, "priceLow");
+    if (sort === "priceDesc") list = sortBooks(list, "priceHigh");
+    if (sort === "newest") list = sortBooks(list, "newest");
+    if (sort === "oldest") list = sortBooks(list, "oldest");
+    if (sort === "nameAZ") list = sortBooks(list, "nameAZ");
+    if (sort === "nameZA") list = sortBooks(list, "nameZA");
     return list;
   }, [inventory, query, board, condition, sort]);
 
@@ -86,8 +92,16 @@ export default function Marketplace() {
           label="Sort"
           value={sort}
           onChange={setSort}
-          options={["relevance", "priceAsc", "priceDesc"]}
-          display={{ relevance: "Relevance", priceAsc: "Price: Low to High", priceDesc: "Price: High to Low" }}
+          options={["relevance", "newest", "oldest", "priceAsc", "priceDesc", "nameAZ", "nameZA"]}
+          display={{
+            relevance: "Relevance",
+            newest: "Newest First",
+            oldest: "Oldest First",
+            priceAsc: "Price: Low to High",
+            priceDesc: "Price: High to Low",
+            nameAZ: "Book Name (A-Z)",
+            nameZA: "Book Name (Z-A)",
+          }}
         />
       </div>
 
