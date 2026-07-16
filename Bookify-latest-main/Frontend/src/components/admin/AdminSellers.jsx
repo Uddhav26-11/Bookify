@@ -1,8 +1,11 @@
 // Frontend/src/components/admin/AdminSellers.jsx
-import { UserCircle2 } from "lucide-react";
+import { useState } from "react";
+import { UserCircle2, MessageSquare } from "lucide-react";
 import DataTable from "./DataTable";
+import MessageUserModal from "./MessageUserModal";
 
 export default function AdminSellers({ users, books }) {
+  const [messageTarget, setMessageTarget] = useState(null);
   const sellers = users
     .filter((u) => u.role === "seller")
     .map((u) => ({
@@ -53,6 +56,19 @@ export default function AdminSellers({ users, books }) {
       sortable: true,
       render: (row) => <span className="text-xs text-muted">{new Date(row.createdAt).toLocaleDateString("en-IN")}</span>,
     },
+    {
+      key: "message",
+      label: "",
+      render: (row) => (
+        <button
+          onClick={() => setMessageTarget(row)}
+          className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-mint text-forest hover:bg-forest hover:text-white transition"
+        >
+          <MessageSquare size={13} />
+          Message
+        </button>
+      ),
+    },
   ];
 
   return (
@@ -73,6 +89,10 @@ export default function AdminSellers({ users, books }) {
         }}
         emptyText="No sellers yet."
       />
+
+      {messageTarget && (
+        <MessageUserModal user={messageTarget} onClose={() => setMessageTarget(null)} />
+      )}
     </div>
   );
 }

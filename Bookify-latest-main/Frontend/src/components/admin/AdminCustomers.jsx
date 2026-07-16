@@ -1,8 +1,11 @@
 // Frontend/src/components/admin/AdminCustomers.jsx
-import { UserCircle2 } from "lucide-react";
+import { useState } from "react";
+import { UserCircle2, MessageSquare } from "lucide-react";
 import DataTable from "./DataTable";
+import MessageUserModal from "./MessageUserModal";
 
 export default function AdminCustomers({ users, orders }) {
+  const [messageTarget, setMessageTarget] = useState(null);
   const customers = users
     .filter((u) => u.role === "customer")
     .map((u) => ({
@@ -46,6 +49,19 @@ export default function AdminCustomers({ users, orders }) {
         </span>
       ),
     },
+    {
+      key: "message",
+      label: "",
+      render: (row) => (
+        <button
+          onClick={() => setMessageTarget(row)}
+          className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-mint text-forest hover:bg-forest hover:text-white transition"
+        >
+          <MessageSquare size={13} />
+          Message
+        </button>
+      ),
+    },
   ];
 
   return (
@@ -58,6 +74,10 @@ export default function AdminCustomers({ users, orders }) {
         searchKeys={["name", "email", "phone"]}
         emptyText="No customers yet."
       />
+
+      {messageTarget && (
+        <MessageUserModal user={messageTarget} onClose={() => setMessageTarget(null)} />
+      )}
     </div>
   );
 }

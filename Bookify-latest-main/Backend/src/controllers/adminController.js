@@ -625,6 +625,44 @@ exports.deleteBook = async (req, res) => {
   }
 };
 
+// POST /api/admin/users/:userId/message
+// Lets the admin send a direct, one-off message/notification to a seller or
+// customer (e.g. "your pickup is delayed", "please update your bank
+// details"). Delivered through the same notification pipeline (DB +
+// realtime socket) everything else uses, so it shows up in their bell.
+exports.sendUserMessage = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { message, title } = req.body;
+
+    if (!message || !message.trim()) {
+      return res.status(400).json({ success: false, message: "Message cannot be empty" });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+    if (!["seller", "customer"].includes(user.role)) {
+      return res.status(400).json({ success: false, message: "Can only message sellers or customers" });
+    }
+
+    const notification = await sendNotification({
+      receiver: user._id,
+      receiverRole: user.role,
+      sender: req.user.id,
+      senderName: "Bookify Admin",
+      title: title?.trim() || "Message from Admin",
+      message: message.trim(),
+      type: "ADMIN_MESSAGE",
+    });
+
+    return res.status(200).json({ success: true, message: "Message sent", notification });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 exports.deletePickupRequest = async (req, res) => {
   try {
     const { id } = req.params;

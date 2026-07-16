@@ -17,6 +17,7 @@ const {
   deleteOrder,
   getAnalytics,
   getStripeAccountDetails,
+  sendUserMessage,
 } = require("../controllers/adminController");
 const { protect } = require("../middleware/authMiddleware");
 const { authorizeRoles } = require("../middleware/roleMiddleware");
@@ -39,6 +40,7 @@ router.post(
 );
 router.patch("/pickups/:id/pay", protect, authorizeRoles("admin"), payPickup);
 router.get("/users", protect, authorizeRoles("admin"), getAllUsers);
+router.post("/users/:userId/message", protect, authorizeRoles("admin"), sendUserMessage);
 router.patch("/books/:bookId/price",protect,authorizeRoles("admin"),updateBookPrice,);
 router.patch("/books/:bookId/counter-offer", protect, authorizeRoles("admin"), sendCounterOffer);
 router.delete("/books/:bookId", protect, authorizeRoles("admin"), deleteBook);
