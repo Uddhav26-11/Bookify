@@ -57,7 +57,7 @@ export default function AdminSidebar({ active, onSelect, mobileOpen, onCloseMobi
       )}
 
       <aside
-        className={`fixed top-0 left-0 h-full w-64 bg-white border-r border-mint-line z-50 flex flex-col transition-transform duration-300 lg:translate-x-0 lg:sticky lg:top-0 lg:h-screen lg:z-40 lg:flex lg:shrink-0 ${
+        className={`fixed inset-y-0 left-0 w-64 bg-white border-r border-mint-line z-50 flex flex-col transition-transform duration-300 lg:translate-x-0 lg:sticky lg:top-0 lg:bottom-auto lg:h-screen lg:z-40 lg:flex lg:shrink-0 ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
